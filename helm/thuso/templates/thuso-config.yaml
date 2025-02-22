@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thuso-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  {{- range $key, $value := .Values.configMap }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  

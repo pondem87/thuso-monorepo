@@ -1,0 +1,5 @@
+node_modules
+.env
+**/values-prod.yaml
+**/values-staging.yaml
+dist

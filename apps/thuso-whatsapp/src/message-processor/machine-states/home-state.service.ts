@@ -1,0 +1,60 @@
+import { Inject, Injectable } from "@nestjs/common";
+import { Logger } from "winston";
+import { ClientProxy } from "@nestjs/microservices";
+import { LoggingService } from "@lib/logging";
+import { MainMenuItems, WhatsappRmqClient } from "@lib/thuso-common";
+import { ISMContext, ISMEventType } from "../state-machines/interactive.state-machine.provider";
+import { LLMQueueService } from "../services/llm-queue.service";
+import { sendTextMessage } from "./shared";
+
+@Injectable()
+export class HomeStateService {
+    private logger: Logger
+
+    constructor (
+        private readonly loggingService: LoggingService,
+        private readonly llmQueueService: LLMQueueService,
+        @Inject(WhatsappRmqClient)
+        private readonly whatsappQueueClient: ClientProxy
+    ) {
+        this.logger = this.loggingService.getLogger({
+            module: "message-processor",
+            file: "home-state.service"
+        })
+
+        this.logger.info("Initializing HomeStateService")
+    }
+
+    executeHomeState = async ({ context }: { context: ISMContext}): Promise<ISMEventType> => {
+        const message = context.message
+        if (message == null) {
+            this.logger.error("message cannot be null in executeHomeState({ context }: { context: ISMContext})")
+            throw new Error("message cannot be null in executeHomeState({ context }: { context: ISMContext})")
+        }
+        switch (message.type) {
+            case "text":
+                // process text via llm
+                this.llmQueueService.sendPlainTextToLLM(context.wabaId, context.metadata, context.contact, message.text.body)
+                return {type: "nochange"}
+            
+            case "interactive":
+                switch (message.interactive.type) {
+                    case "list_reply":
+                        // menu selection
+                        switch (message.interactive.list_reply.id) {
+                            case MainMenuItems[0].id:
+                                return { type: "products" }
+                            case MainMenuItems[1].id:
+                                sendTextMessage(context, this.whatsappQueueClient, `Sorry, this menu option (${MainMenuItems[1].title}) is still under development.`)
+                                return {type: "nochange"}
+                            default:
+                        }
+                    default:
+                }
+            default:
+                sendTextMessage(context, this.whatsappQueueClient, `Sorry, the type of message you sent is either not supported or invalid menu selection.`)
+                return {type: "nochange"}
+        }
+    }
+
+}

@@ -1,0 +1,41 @@
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { Logger } from 'winston';
+import { LoggingService } from '@lib/logging';
+import { ApiAuthGuard } from '@lib/thuso-common/api-auth-guard';
+import { ProductsApiService } from '../services/products.api.service';
+
+@UseGuards(ApiAuthGuard)
+@Controller('api/:profileId/products')
+export class ProductsApiController {
+    private logger: Logger
+
+    constructor (
+        private readonly loggingService: LoggingService,
+        private readonly productsApiService: ProductsApiService
+    ) {
+        this.logger = this.loggingService.getLogger({
+            module: "products",
+            file: "products.api.controller"
+        })
+
+        this.logger.info("Products API Controller initialized")
+    }
+
+    
+    @Get()
+    listProducts(
+        @Param('profileId') profileId: string,
+        @Query('skip', new ParseIntPipe({ optional: true })) skip?: number,
+        @Query('take', new ParseIntPipe({ optional: true })) take?: number
+    ) {
+        return this.productsApiService.listProducts(profileId, skip, take)
+    }
+
+    @Get(":productId")
+    getProduct(
+        @Param('profileId') profileId: string,
+        @Param('productId') id: string,
+    ) {
+        return this.productsApiService.getProduct(profileId, id)
+    }
+}

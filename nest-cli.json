@@ -1,0 +1,77 @@
+{
+	"$schema": "https://json.schemastore.org/nest-cli",
+	"collection": "@nestjs/schematics",
+	"sourceRoot": "apps/thuso-monorepo/src",
+	"compilerOptions": {
+		"deleteOutDir": true,
+		"webpack": true,
+		"tsConfigPath": "apps/thuso-monorepo/tsconfig.app.json"
+	},
+	"monorepo": true,
+	"root": "apps/thuso-monorepo",
+	"projects": {
+		"thuso-monorepo": {
+			"type": "application",
+			"root": "apps/thuso-monorepo",
+			"entryFile": "main",
+			"sourceRoot": "apps/thuso-monorepo/src",
+			"compilerOptions": {
+				"tsConfigPath": "apps/thuso-monorepo/tsconfig.app.json"
+			}
+		},
+		"management": {
+			"type": "application",
+			"root": "apps/management",
+			"entryFile": "main",
+			"sourceRoot": "apps/management/src",
+			"compilerOptions": {
+				"tsConfigPath": "apps/management/tsconfig.app.json"
+			}
+		},
+		"thuso-whatsapp": {
+			"type": "application",
+			"root": "apps/thuso-whatsapp",
+			"entryFile": "main",
+			"sourceRoot": "apps/thuso-whatsapp/src",
+			"compilerOptions": {
+				"tsConfigPath": "apps/thuso-whatsapp/tsconfig.app.json"
+			}
+		},
+		"thuso-subscription": {
+			"type": "application",
+			"root": "apps/thuso-subscription",
+			"entryFile": "main",
+			"sourceRoot": "apps/thuso-subscription/src",
+			"compilerOptions": {
+				"tsConfigPath": "apps/thuso-subscription/tsconfig.app.json"
+			}
+		},
+		"thuso-ai": {
+			"type": "application",
+			"root": "apps/thuso-ai",
+			"entryFile": "main",
+			"sourceRoot": "apps/thuso-ai/src",
+			"compilerOptions": {
+				"tsConfigPath": "apps/thuso-ai/tsconfig.app.json"
+			}
+		},
+		"thuso-common": {
+			"type": "library",
+			"root": "libs/thuso-common",
+			"entryFile": "index",
+			"sourceRoot": "libs/thuso-common/src",
+			"compilerOptions": {
+				"tsConfigPath": "libs/thuso-common/tsconfig.lib.json"
+			}
+		},
+		"logging": {
+			"type": "library",
+			"root": "libs/logging",
+			"entryFile": "index",
+			"sourceRoot": "libs/logging/src",
+			"compilerOptions": {
+				"tsConfigPath": "libs/logging/tsconfig.lib.json"
+			}
+		}
+	}
+}
