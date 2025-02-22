@@ -5,7 +5,7 @@ import { Logger } from "winston";
 import { InteractiveStateMachineService } from "./interactive.state-machine.service";
 import { Contact, Messages, Metadata, StateMachineActor } from "@lib/thuso-common";
 import { LoggingService } from "@lib/logging";
-import { PersistedInteractiveState } from "../entities/persisted-interactive-state";
+import { PersistedInteractiveState } from "../entities/persisted-interactive-state.entity";
 
 
 @Injectable()

@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Logger } from "winston";
 import { Repository } from "typeorm";
-import { PersistedInteractiveState } from "../entities/persisted-interactive-state";
+import { PersistedInteractiveState } from "../entities/persisted-interactive-state.entity";
 import { LoggingService } from "@lib/logging";
 
 @Injectable()

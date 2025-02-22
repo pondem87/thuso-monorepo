@@ -1,7 +1,7 @@
 import { LoggingService } from '@lib/logging';
 import { Controller } from '@nestjs/common';
 import { Logger } from 'winston';
-import { MessageProcessorService } from './message-processor.service';
+import { MessageProcessorService } from './services/message-processor.service';
 import { EventPattern } from '@nestjs/microservices';
 import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, MessageProcessorRMQMessage } from '@lib/thuso-common';
 
