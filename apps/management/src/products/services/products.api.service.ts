@@ -16,10 +16,9 @@ export class ProductsApiService {
     ) {
         this.logger = this.loggingService.getLogger({
             module: "products",
-            file: "products.controller"
+            file: "products.api.service"
         })
     }
-
 
     async getProduct(businessProfileId: string, id: string) {
         try {
@@ -44,5 +43,4 @@ export class ProductsApiService {
             throw new HttpException(`Error while uploading file`, HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
-
 }

@@ -24,8 +24,14 @@ export class Account {
     @Column("int8", { default: 2 })
     maxAllowedBusinesses: number
 
+    @Column("int", { default: 1000 })
+    maxAllowedDailyConversations: number
+
     @Column("boolean", { default: false })
     disabled: boolean
+
+    @Column("timestamp", { nullable: true })
+    subscriptionEndDate: Date
 
     @CreateDateColumn()
     createdAt: Date
