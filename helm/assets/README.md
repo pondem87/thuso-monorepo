@@ -38,5 +38,5 @@ helm install cert-manager -n cert-manager --version v1.16.2 jetstack/cert-manage
 ## App namespaces
 I will need two namespaces for production and for staging
 command:
-kubectl create ns thuso-prod
+kubectl create ns thuso-production
 kubectl create ns thuso-staging

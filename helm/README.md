@@ -10,8 +10,8 @@ To set environment see assets/README.md
 Get values files from AWS S3
 
 command:
-aws s3 cp s3://pfitz-configs/thuso/staging/values-staging.yaml ./medulla
-aws s3 cp s3://pfitz-configs/thuso/prod/values-prod.yaml ./medulla
+aws s3 cp s3://pfitz-configs/thuso/staging/values-staging.yaml ./thuso
+aws s3 cp s3://pfitz-configs/thuso/prod/values-prod.yaml ./thuso
 
 helm install thuso-staging medulla -f thuso/values-staging.yaml
 helm install thuso-prod medulla -f thuso/values-prod.yaml
