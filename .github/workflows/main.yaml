@@ -31,7 +31,7 @@ jobs:
         run: aws s3 cp s3://pfitz-configs/thuso/staging/.env .
 
       - name: Unit Testing
-        run: npm run test
+        run: npm run test -- --forceExit
 
       - name: E2E Testing
         run: |
