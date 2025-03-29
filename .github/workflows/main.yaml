@@ -73,5 +73,5 @@ jobs:
         run: |
           cd helm
           aws s3 cp s3://pfitz-configs/thuso/prod/values-prod.yaml ./thuso
-          helm install thuso-production thuso -f thuso/values-prod.yaml
+          helm upgrade thuso-production thuso -f thuso/values-prod.yaml
           kubectl rollout restart deployment -n thuso-production
