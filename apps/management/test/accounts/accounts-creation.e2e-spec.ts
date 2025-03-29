@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ManagementModule } from '../../src/management.module';
-import { AccountsController } from '../../src/accounts/accounts.controller';
 import { CreateAccountAndRootUserDto } from '../../src/accounts/dto/create-account-and-root-user.dto';
 import { Repository } from 'typeorm';
 import { User } from '../../src/accounts/entities/user.entity';
@@ -10,6 +9,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt'
 import { MailerService } from '@nestjs-modules/mailer';
 import { generateRandomString, LONG_TEST_TIMEOUT } from '@lib/thuso-common';
+import { AccountsController } from '../../src/accounts/controllers/accounts.controller';
 
 describe('Accounts Creation (e2e)', () => {
     let app: INestApplication;

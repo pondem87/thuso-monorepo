@@ -102,14 +102,17 @@ export class InteractiveStateMachineProvider {
 					input: {} as {
 						contact: Contact,
 						wabaId: string,
-						metadata: Metadata
+						metadata: Metadata,
+						businessInfo: BusinessInfo
 					}
 				},
 				context: ({ input }) => ({
 					contact: input.contact,
 					wabaId: input.wabaId,
 					metadata: input.metadata,
-					productsNav: { skip: 0, take: 8, current: 0, pages: 0 },
+					businessInfo: input.businessInfo,
+					productsNav: { skip: 0, take: defaultTake, current: 0, pages: 0 },
+					promotionsNav: { skip: 0, take: defaultTake, current: 0, pages: 0 },
 					nextEvent: { type: "nochange" }
 				}),
 				states: {
@@ -120,7 +123,7 @@ export class InteractiveStateMachineProvider {
 								on: {
 									execute: {
 										target: "executing",
-										actions: assign(({ event }) => ({ message: event.message }))
+										actions: assign(({ event }) => ({ ...event.payload }))
 									}
 								},
 							},
@@ -162,7 +165,10 @@ export class InteractiveStateMachineProvider {
 						initial: "ready",
 						on: {
 							products: {
-								target: "products"
+								target: "products",
+								actions: assign({
+									productsNav: { skip: 0, take: defaultTake, current: 0, pages: 0 }
+								})
 							},
 							nochange: {
 								target: "home",
@@ -174,7 +180,7 @@ export class InteractiveStateMachineProvider {
 						states: {
 							productsMenu: {
 								entry: [
-									({context}) => this.productsStateService.promptProductsMenuState({context})
+									({ context }) => this.productsStateService.promptProductsMenuState({ context })
 								],
 								states: {
 									ready: {
@@ -182,7 +188,7 @@ export class InteractiveStateMachineProvider {
 										on: {
 											execute: {
 												target: "executing",
-												actions: assign(({ event }) => ({ message: event.message}))
+												actions: assign(({ event }) => ({ ...event.payload }))
 											}
 										},
 									},
@@ -207,7 +213,7 @@ export class InteractiveStateMachineProvider {
 												target: "ready",
 												actions: [
 													({ event }) => this.logger.error(
-														"PaymentMethodSelection State executor failed",
+														"ProductsMenu State executor failed",
 														{ error: event.error }
 													),
 													assign({
@@ -225,13 +231,13 @@ export class InteractiveStateMachineProvider {
 								on: {
 									viewProduct: {
 										target: "productView",
-										actions: assign(({event}) => ({
+										actions: assign(({ event }) => ({
 											productId: event.productId
 										}))
 									},
 									navigateProducts: {
 										target: "productsMenu",
-										actions: assign(({event}) => ({productsNav: event.nav}))
+										actions: assign(({ event }) => ({ productsNav: event.nav }))
 									},
 									nochange: {
 										target: "productsMenu",
@@ -240,7 +246,61 @@ export class InteractiveStateMachineProvider {
 								}
 							},
 							productView: {
-
+								states: {
+									ready: {
+										tags: ["ready"],
+										on: {
+											execute: {
+												target: "executing",
+												actions: assign(({ event }) => ({ ...event.payload }))
+											}
+										},
+									},
+									executing: {
+										invoke: {
+											id: randomUUID(),
+											src: this.executorStateMachine,
+											input: ({ context }) => ({
+												parentContext: context,
+												executorSrc: this.productsStateService.executeProductView
+											}),
+											onDone: {
+												actions: [
+													assign({
+														message: undefined,
+														nextEvent: ({ event }) => event.output
+													})
+												],
+												target: "executed"
+											},
+											onError: {
+												target: "ready",
+												actions: [
+													({ event }) => this.logger.error(
+														"ProductView State executor failed",
+														{ error: event.error }
+													),
+													assign({
+														message: undefined
+													})
+												]
+											}
+										}
+									},
+									executed: {
+										tags: ["executed"]
+									}
+								},
+								initial: "ready",
+								on: {
+									navigateProducts: {
+										target: "productsMenu"
+									},
+									nochange: {
+										target: "productView",
+										reenter: true
+									}
+								}
 							}
 						},
 						initial: "productsMenu",
@@ -249,7 +309,7 @@ export class InteractiveStateMachineProvider {
 								target: "home"
 							},
 							nochange: {
-								target: "paymentMethodSelection",
+								target: "products",
 								reenter: true
 							}
 						}
@@ -265,13 +325,20 @@ export class InteractiveStateMachineProvider {
 
 }
 
+export const defaultTake = 5
+
 export type ISMEventType =
 	{ type: "products" } |
 	{ type: "navigateProducts"; nav: { skip: number; take: number; current: number; pages: number } } |
 	{ type: "viewProduct"; productId: string } |
 	{ type: "productsBackToMenu" } |
 	{ type: "exitProducts" } |
-	{ type: "execute", message: Messages } |
+	{ type: "promotions" } |
+	{ type: "navigatePromotions"; nav: { skip: number; take: number; current: number; pages: number } } |
+	{ type: "viewPromotion"; productId: string } |
+	{ type: "promotionsBackToMenu" } |
+	{ type: "exitPromotions" } |
+	{ type: "execute", payload: { contact: Contact, message: Messages, businessInfo: BusinessInfo } } |
 	{ type: "nochange" }
 
 export type ExecutorSrcType = ({ context }: { context: ISMContext }) => Promise<ISMEventType>
@@ -280,10 +347,19 @@ export type ISMContext = {
 	contact: Contact,
 	message?: Messages,
 	metadata: Metadata,
+	businessInfo?: BusinessInfo,
 	wabaId: string
 	nextEvent?: ISMEventType
 	productId?: string,
 	productsNav: { skip: number; take: number; current: number; pages: number }
+	promotionsId?: string,
+	promotionsNav: { skip: number; take: number; current: number; pages: number }
+}
+
+export type BusinessInfo = {
+	name: string,
+	tagline: string,
+	wabaToken: string
 }
 
 

@@ -5,7 +5,7 @@ export class MessageProcessorAccountData {
     @PrimaryGeneratedColumn("uuid")
     id: string
 
-    @Column("varchar", { unique: true })
+    @Column("varchar")
     phoneNumberId: string
 
     @Column("uuid")

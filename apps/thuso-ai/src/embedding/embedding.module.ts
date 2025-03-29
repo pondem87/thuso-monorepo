@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { EmbeddingController } from './embedding.controller';
 import { EmbeddingService } from './embedding.service';
-import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
-import { ApiAuthGuard } from '@lib/thuso-common/api-auth-guard';
+import { ApiAuthGuard } from '@lib/thuso-common';
 import { ThusoCommonModule } from '@lib/thuso-common';
+import { PostgresVectorStore } from './vector-store.provider';
+import { LoggingModule } from '@lib/logging';
 
 @Module({
-  imports: [ThusoCommonModule],
+  imports: [ThusoCommonModule, LoggingModule],
   controllers: [EmbeddingController],
-  providers: [EmbeddingService, PGVectorStore, ApiAuthGuard]
+  providers: [EmbeddingService, PostgresVectorStore, ApiAuthGuard],
+  exports: [EmbeddingService],
 })
 export class EmbeddingModule {}

@@ -81,7 +81,7 @@ export class BusinessesService {
             let appNumber = await this.whatsappNumberRepository.findOne({ where: { accountId, appNumberId: data.phoneNumberId } })
             if (!appNumber) {
                 // check if max allowed numbers achieved
-                if (business.appNumbers.length >= 2) {
+                if (business.appNumbers && business.appNumbers.length >= 2) {
                     return {
                         error: "You have reached the maximum number of phone numbers!"
                     }
@@ -152,7 +152,7 @@ export class BusinessesService {
             }
 
         } catch (error) {
-            this.logger.error("Error while creating WhatsApp Business", { accountId, error: JSON.stringify(error) })
+            this.logger.error("Error while creating WhatsApp Business", { accountId, error })
             throw new HttpException("Error while creating WhatsApp Business", HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
@@ -399,8 +399,15 @@ export class BusinessesService {
     async updateBusinessProfile(accountId: string, id: string, data: UpdateBusinessProfileDto): Promise<BusinessProfileDto> {
         try {
             const businessProfile = await this.businessProfileRepository.findOne({
-                where: { accountId, id }
+                where: { accountId, id },
+                relations: { waba: true }
             });
+
+            if (data.businessId) {
+                const business = await this.whatsappBusinessRepository.findOneBy({id: data.businessId})
+                if (business) businessProfile.waba = business
+                delete data.businessId
+            }
 
             const keys = Object.keys(data)
             for (const key of keys) {

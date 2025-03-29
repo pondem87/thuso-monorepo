@@ -11,10 +11,10 @@ import * as fs from "fs";
 import { Logger } from "winston";
 import { LoggingService } from "@lib/logging";
 
-interface EmbeddingMetadata {
-    accountId: string
+export class EmbeddingMetadata {
     documentId: string
     businessProfileId: string
+    accountId: string
     s3key: string
     mimetype: string
 }
@@ -47,7 +47,7 @@ export class PostgresVectorStore {
                 password: this.config.get<string>("DB_PASSWORD"),
                 database: this.config.get<string>("EMBEDDINGS_DB_NAME"),
                 ssl: {
-                    ca: fs.readFileSync("af-south-1-bundle.pem")
+                    ca: fs.readFileSync(this.config.get<string>("DB_CERT_PATH"))
                 }
             } as PoolConfig,
             tableName: "document_embeddings",
@@ -62,10 +62,11 @@ export class PostgresVectorStore {
         }
 
         this.pgVectorStore = null
-        this.similaritySearchResultCount = parseInt(this.config.get<string>("SIMILARITY_SEARCH_RESULT_COUNT")) || 4
+        this.similaritySearchResultCount = parseInt(this.config.get<string>("SIMILARITY_SEARCH_RESULT_COUNT")) || 5
     }
 
     async initVectorStore(): Promise<PGVectorStore> {
+
         this.pgVectorStore = await PGVectorStore.initialize(
             new OpenAIEmbeddings(),
             this.pgvconfig

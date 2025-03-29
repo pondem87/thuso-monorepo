@@ -1,8 +1,8 @@
 {
   "name": "thuso-monorepo",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "thuso codebase",
+  "author": "pfitztronic",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -19,12 +19,17 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/thuso-monorepo/test/jest-e2e.json",
     "test:e2e:management": "jest --config ./apps/management/test/jest-e2e.ts",
-    "test:e2e:thuso-whatsapp": "jest --config ./apps/thuso-whatsapp/test/jest-e2e.ts"
+    "test:e2e:thuso-whatsapp": "jest --config ./apps/thuso-whatsapp/test/jest-e2e.ts",
+    "test:e2e:thuso-ai": "jest --config ./apps/thuso-ai/test/jest-e2e.ts",
+    "test:e2e:subscription": "jest --config ./apps/thuso-whatsapp/test/jest-e2e.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.749.0",
     "@langchain/community": "^0.3.31",
     "@langchain/core": "^0.3.40",
+    "@langchain/langgraph": "^0.2.55",
+    "@langchain/langgraph-checkpoint-postgres": "^0.0.4",
+    "@langchain/openai": "^0.4.4",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^4.0.0",

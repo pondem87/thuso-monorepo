@@ -89,3 +89,14 @@ export function numberToMonth(number: number) {
 export function generateS3Key(type: "image" | "document", subfolder: string, filename: string): string {
     return `${type}/${subfolder}/${generateRandomString(15, "alpha")}${extname(filename)}`
 }
+
+export function cropTextToLength(text: string, length: number): string {
+    const _text = text.trim();
+    if (length <= 0) return "";
+    if (length <= 3) return _text.slice(0, length); // Avoid returning just "..."
+    return _text.length > length ? `${_text.slice(0, length - 3)}...` : _text
+}
+
+export function getDateOnly(date: Date): string {
+    return date.toISOString().split("T")[0];
+}

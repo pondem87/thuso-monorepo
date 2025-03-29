@@ -705,3 +705,18 @@ export type MessagesResponse = {
         }
     ]
 }
+
+
+// character limits
+export const CHAR_LIMITS = {
+    BUTTON_TEXT: 20,
+    MESSAGE_BODY: 4096,
+    MESSAGE_FOOTER_TEXT: 60,
+    MESSAGE_HEADER_TEXT: 60,
+    ROW_DESCRIPTION_TEXT: 72,
+    ROW_ID: 200,
+    ROW_TITLE_TEXT: 24,
+    SECTION_TITLE_TEXT: 24,
+    BUTTON_LABEL_TEXT: 20,
+    BODY_TEXT: 1024
+}

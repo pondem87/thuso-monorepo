@@ -6,7 +6,7 @@ export class ThusoAiController {
   constructor(private readonly thusoAiService: ThusoAiService) {}
 
   @Get()
-  getHello(): string {
+  getHealth(): string {
     return this.thusoAiService.getHealth();
   }
 }

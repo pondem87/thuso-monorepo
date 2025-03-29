@@ -45,6 +45,8 @@ export class HomeStateService {
                             case MainMenuItems[0].id:
                                 return { type: "products" }
                             case MainMenuItems[1].id:
+                                return { type: "promotions" }
+                            case MainMenuItems[2].id:
                                 sendTextMessage(context, this.whatsappQueueClient, `Sorry, this menu option (${MainMenuItems[1].title}) is still under development.`)
                                 return {type: "nochange"}
                             default:

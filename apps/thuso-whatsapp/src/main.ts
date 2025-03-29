@@ -13,7 +13,7 @@ async function bootstrap() {
 			urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
 			queue: configService.get<string>("WHATSAPP_RMQ_QUEUENAME"),
 			queueOptions: {
-				durable: configService.get<string>("MEDULLA_RMQ_QUEUE_DURABLE") === "true" ? true : false
+				durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true" ? true : false
 			}
 		}
 	})

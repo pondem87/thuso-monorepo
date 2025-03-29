@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Post, UseGuards } from '@nestjs/common';
 import { Logger } from 'winston';
 import { EmbeddingService } from './embedding.service';
 import { CreateEmbeddingDto } from './dto/create-embedding.dto';
-import { ApiAuthGuard } from '@lib/thuso-common/api-auth-guard';
+import { ApiAuthGuard } from '@lib/thuso-common';
 
 @UseGuards(ApiAuthGuard)
 @Controller('ai/embedding')

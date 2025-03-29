@@ -15,8 +15,8 @@ describe('ManagementController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(managementController.getHealth()).toBe('Hello World!');
+    it('should return "Server Active!"', () => {
+      expect(managementController.getHealth()).toBe('Server Active!');
     });
   });
 });

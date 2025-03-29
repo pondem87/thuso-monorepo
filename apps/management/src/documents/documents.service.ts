@@ -84,7 +84,10 @@ export class DocumentsService {
             const result = await fetch(`${this.aiServerRoot}/ai/embedding`,
                 {
                     method: "POST",
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(dto)
                 }
             )
@@ -116,7 +119,10 @@ export class DocumentsService {
             const result = await fetch(`${this.aiServerRoot}/ai/embedding`,
                 {
                     method: "POST",
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(dto)
                 }
             )
@@ -183,7 +189,10 @@ export class DocumentsService {
                 await fetch(`${this.aiServerRoot}/ai/embedding`,
                     {
                         method: "DELETE",
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(pdto)
                     }
                 )
@@ -201,7 +210,10 @@ export class DocumentsService {
                 const result = await fetch(`${this.aiServerRoot}/ai/embedding`,
                     {
                         method: "POST",
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(dto)
                     }
                 )
@@ -251,7 +263,10 @@ export class DocumentsService {
             await fetch(`${this.aiServerRoot}/ai/embedding`,
                 {
                     method: "DELETE",
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(pdto)
                 }
             )

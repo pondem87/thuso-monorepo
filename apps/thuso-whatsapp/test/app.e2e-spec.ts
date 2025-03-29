@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { ThusoWhatsappModule } from './../src/thuso-whatsapp.module';
+import { LONG_TEST_TIMEOUT } from '@lib/thuso-common';
 
 describe('ThusoWhatsappController (e2e)', () => {
   let app: INestApplication;
@@ -13,7 +14,7 @@ describe('ThusoWhatsappController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
+  }, LONG_TEST_TIMEOUT);
 
   it('/ (GET)', () => {
     return request(app.getHttpServer())

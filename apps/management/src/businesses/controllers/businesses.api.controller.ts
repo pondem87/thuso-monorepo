@@ -1,5 +1,5 @@
 import { LoggingService } from "@lib/logging"
-import { ApiAuthGuard } from "@lib/thuso-common/api-auth-guard"
+import { ApiAuthGuard } from "@lib/thuso-common"
 import { UseGuards, Controller, Get, Param } from "@nestjs/common"
 import { Logger } from "winston"
 import { BusinessesApiService } from "../services/businesses.api.service"
@@ -26,5 +26,12 @@ export class ProductsApiController {
         @Param('phoneNumberId') phoneNumberId: string
     ) {
         return this.businessesApiService.getBusinessInfoByPhoneNumberId(phoneNumberId)
+    }
+
+    @Get(":wabaId")
+    getBusinessInfoByWabaId (
+        @Param('wabaId') wabaId: string
+    ) {
+        return this.businessesApiService.getBusinessInfoByWabaId(wabaId)
     }
 }

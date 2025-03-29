@@ -36,4 +36,19 @@ export class BusinessesApiService {
         }
     }
 
+    async getBusinessInfoByWabaId(wabaId: string) {
+        try {
+            return await this.businessRepository.findOne({
+                where: { 
+                    wabaId
+                },
+                relations: {
+                    businessProfile: true,
+                }
+            })
+        } catch (error) {
+            this.logger.error("Error while getting business information by wabaid", { wabaId,  error })
+            throw new HttpException("Failed to get business info", HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
 }

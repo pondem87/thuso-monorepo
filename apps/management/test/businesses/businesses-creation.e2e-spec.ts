@@ -9,9 +9,9 @@ import { WhatsAppBusiness } from "../../src/businesses/entities/whatsapp-busines
 import { WhatsAppNumber } from "../../src/businesses/entities/whatsapp-number";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import * as bcrypt from 'bcrypt'
-import { BusinessesService } from "../../src/businesses/businesses.service";
 import { CreateBusinessDto } from "../../src/businesses/dto/create-business.dto"
 import { ConfigService } from "@nestjs/config";
+import { BusinessesService } from "../../src/businesses/services/businesses.service";
 
 
 describe('Business Creations (e2e)', () => {

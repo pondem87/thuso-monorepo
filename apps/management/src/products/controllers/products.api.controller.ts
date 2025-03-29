@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
-import { ApiAuthGuard } from '@lib/thuso-common/api-auth-guard';
+import { ApiAuthGuard } from '@lib/thuso-common';
 import { ProductsApiService } from '../services/products.api.service';
 
 @UseGuards(ApiAuthGuard)

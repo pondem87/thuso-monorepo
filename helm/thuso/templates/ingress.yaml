@@ -28,7 +28,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: whatsapp-service
+                name: thuso-whatsapp-service
                 port:
                   name: http
           

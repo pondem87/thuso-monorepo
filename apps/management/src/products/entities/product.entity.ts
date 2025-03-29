@@ -15,7 +15,10 @@ export class Product {
     name: string
 
     @Column("varchar")
-    description: string
+    shortDescription: string
+
+    @Column("varchar")
+    fullDetails: string
 
     @Column("varchar")
     price: string

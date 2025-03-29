@@ -1,5 +1,5 @@
 import { AnyActorRef, assign, createActor, fromPromise, setup, waitFor } from "xstate";
-import { InteractiveStateMachineProvider, ISMContext, ISMEventType } from "./interactive.state-machine.provider";
+import { BusinessInfo, InteractiveStateMachineProvider, ISMContext, ISMEventType } from "./interactive.state-machine.provider";
 import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { InteractiveStateMachineService } from "./interactive.state-machine.service";
@@ -23,7 +23,7 @@ export class MessageProcessingStateMachineProvider {
             }
         },
         actors: {
-            getPersistedInteractiveState: fromPromise(async ({ input }: { input: { wabaId: string, metadata: Metadata, contact: Contact } }) => {
+            getPersistedInteractiveState: fromPromise(async ({ input }: { input: { wabaId: string, metadata: Metadata, contact: Contact, businessInfo: BusinessInfo } }) => {
                 const persisted = await this.getPersistedInteractiveState(input)
                 return { ...persisted }
             }),
@@ -42,7 +42,8 @@ export class MessageProcessingStateMachineProvider {
                 wabaId: input.wabaId,
                 contact: input.contact,
                 metadata: input.metadata,
-                message: input.message
+                message: input.message,
+                businessInfo: input.businessInfo
             }),
             initial: "StateRetrieval",
             states: {
@@ -50,7 +51,7 @@ export class MessageProcessingStateMachineProvider {
                     invoke: {
                         id: "getPersistedInteractiveState",
                         src: "getPersistedInteractiveState",
-                        input: ({ context: { wabaId, contact, metadata } }) => ({ wabaId, contact, metadata }),
+                        input: ({ context: { wabaId, contact, metadata, businessInfo } }) => ({ wabaId, contact, metadata, businessInfo }),
                         onDone: {
                             target: "StateActions",
                             actions: assign({
@@ -124,7 +125,7 @@ export class MessageProcessingStateMachineProvider {
         return createActor(this.MessageProcessingStateMachine, { input }) as StateMachineActor<MPSMEventType, MPSMContext>
     }
 
-    async getPersistedInteractiveState({ wabaId, metadata, contact }: { wabaId: string, metadata: Metadata, contact: Contact }) {
+    async getPersistedInteractiveState({ wabaId, metadata, contact, businessInfo }: { wabaId: string, metadata: Metadata, contact: Contact, businessInfo: BusinessInfo }) {
         const persistedInteractiveState = await this.interactiveStateMachineService.getPersistedInteractiveState(metadata.phone_number_id, contact.wa_id)
         let ismActor: StateMachineActor<ISMEventType, ISMContext>
 
@@ -136,7 +137,8 @@ export class MessageProcessingStateMachineProvider {
                 input: {
                     wabaId,
                     contact,
-                    metadata
+                    metadata,
+                    businessInfo
                 }
             })
         }
@@ -149,7 +151,14 @@ export class MessageProcessingStateMachineProvider {
     async performStateAction(input: { context: MPSMContext }) {
         const context = input.context
 
-        context.ismActor.send({ type: "execute", message: context.message })
+        context.ismActor.send({
+            type: "execute", 
+            payload: {
+                contact: context.contact,
+                message: context.message,
+                businessInfo: context.businessInfo
+            }
+        })
 
         await waitFor(
             context.ismActor as AnyActorRef,
@@ -187,6 +196,7 @@ export type MPSMContext = {
     ismActor?: StateMachineActor<ISMEventType, ISMContext>;
     metadata: Metadata
     message: Messages;
+    businessInfo: BusinessInfo;
     error?: any
 }
 
@@ -195,4 +205,5 @@ export type MPSMInput = {
     contact: Contact;
     message: Messages;
     metadata: Metadata;
+    businessInfo: BusinessInfo
 }

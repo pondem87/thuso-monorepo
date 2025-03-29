@@ -2,12 +2,12 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEmbeddingDto } from './dto/create-embedding.dto';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
-import { PostgresVectorStore } from './vector-store.provider';
+import { EmbeddingMetadata, PostgresVectorStore } from './vector-store.provider';
 import { ConfigService } from '@nestjs/config';
 import { GetObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { CHARACTER_TEXT_SPLITTING_CHUNK, CHARACTER_TEXT_SPLITTING_OVERLAP } from '@lib/thuso-common';
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
+import * as mammoth from "mammoth";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { Document } from "@langchain/core/documents";
 import { TextLoader } from "langchain/document_loaders/fs/text";
@@ -64,7 +64,13 @@ export class EmbeddingService {
 
             switch (dto.mimetype) {
                 case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                    documents = await splitter.splitDocuments(await (new DocxLoader(fileBlob)).load())          
+                    const arrayBuffer = await fileBlob.arrayBuffer();
+                    documents = await splitter.splitDocuments([
+                        new Document({
+                          pageContent: (await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })).value,
+                          metadata: { ...dto }
+                        })
+                      ])          
                     break;
     
                 case "application/pdf":
@@ -90,7 +96,7 @@ export class EmbeddingService {
             return { success: true }
 
         } catch (error) {
-            this.logger.error("Failed embedding", { ...dto })
+            this.logger.error("Failed embedding", { ...dto, error })
             return { success: false }
         }
     }
@@ -100,8 +106,12 @@ export class EmbeddingService {
             await this.vectorStore.deleteEmbeddings(dto)
             return { success: true}
         } catch (error) {
-            this.logger.error("Failed to delete embedding", { ...dto })
+            this.logger.error("Failed to delete embedding", { ...dto, error })
             return { success: false }
         }
+    }
+
+    async searchEmbeddings(input: string, metadata: Partial<EmbeddingMetadata>): Promise<Document[]> {
+        return this.vectorStore.similaritySearch(input, metadata)
     }
 }

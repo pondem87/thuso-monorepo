@@ -92,6 +92,16 @@ export class BusinessesController {
     ) {
         return this.businessesService.getBusinesses(accountId)
     }
+
+    @PermissionsDecorator([
+        { entity: "business_profile", action: PermissionAction.READ }
+    ])
+    @Get('business-profile')
+    getBusinessProfiles(
+        @Param('account') accountId: string,
+    ) {
+        return this.businessesService.getBusinessProfiles(accountId)
+    }
     
     @PermissionsDecorator([
         {entity: "whatsapp_business", action: PermissionAction.READ}
@@ -136,16 +146,6 @@ export class BusinessesController {
         @Param('businessId') businessId: string
     ) {
         return this.businessesService.createBusinessProfile(accountId, businessId, data)
-    }
-
-    @PermissionsDecorator([
-        { entity: "business_profile", action: PermissionAction.READ }
-    ])
-    @Get('business-profile')
-    getBusinessProfiles(
-        @Param('account') accountId: string,
-    ) {
-        return this.businessesService.getBusinessProfiles(accountId)
     }
 
     @PermissionsDecorator([

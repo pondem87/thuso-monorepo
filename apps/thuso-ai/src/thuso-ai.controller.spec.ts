@@ -15,8 +15,8 @@ describe('ThusoAiController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(thusoAiController.getHello()).toBe('Hello World!');
+    it('should return "Server Active!"', () => {
+      expect(thusoAiController.getHealth()).toBe('Server Active!');
     });
   });
 });
