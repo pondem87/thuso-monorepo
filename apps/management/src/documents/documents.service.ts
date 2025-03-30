@@ -9,7 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Document } from './entity/document.entity';
 import { EntityNotFoundError, Repository } from 'typeorm';
 import { Response as Res } from 'express';
-import { Stream } from 'node:stream';
+import { Readable } from 'node:stream';
+import { ReadableStream } from 'node:stream/web';
 import { CreateEmbeddingDto } from './dto/create-embedding.dto';
 
 @Injectable()
@@ -288,7 +289,7 @@ export class DocumentsService {
                 })
             )
 
-            Stream.Readable.fromWeb(Body.transformToWebStream()).pipe(res)
+            Readable.fromWeb(Body.transformToWebStream() as ReadableStream).pipe(res)
             
         } catch (error) {
             res.status(500).send('Error downloading file');
