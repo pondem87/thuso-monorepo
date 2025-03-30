@@ -14,6 +14,8 @@ import { PermissionsGuard } from '../permissions-guard';
 import { PermissionsDecorator } from '../permissions.decorator';
 import { PermissionAction } from '../types';
 import { AccountsService } from '../services/accounts.service';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { EditUserDto } from '../dto/edit-user.dto';
 
 @Controller('management/accounts')
 export class AccountsController {
@@ -100,6 +102,26 @@ export class AccountsController {
         return this.accountsService.verifyAccount(user, data.verificationCode)
     }
 
+    @UseGuards(AuthGuard)
+    @Post('user/change-password')
+    changePassword(
+        @Body() changePassDto: ChangePasswordDto,
+        @Request() request
+    ) {
+        const { user }: { user: User } = request
+        return this.accountsService.changePassword(user, changePassDto)
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('user/change-details')
+    changeDetails(
+        @Body() editUserDto: EditUserDto,
+        @Request() request
+    ) {
+        const { user }: { user: User } = request
+        return this.accountsService.changeUserDetails(user, editUserDto)
+    }
+
     //// ACCOUNT FOCUSED METHODS
     @UseGuards(AuthGuard, PermissionsGuard)
     @PermissionsDecorator([
@@ -113,5 +135,16 @@ export class AccountsController {
     ) {
         const { user }: { user: User } = request
         return this.accountsService.inviteAccountUser(user, accountId, data.email)
+    }
+
+    @UseGuards(AuthGuard, PermissionsGuard)
+    @PermissionsDecorator([
+        { entity: "account", action: PermissionAction.READ }
+    ])
+    @Get(':account/get-account')
+    getAccount(
+        @Param('account') accountId: string
+    ) {
+        return this.accountsService.findOneAccountById(accountId)
     }
 }

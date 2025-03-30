@@ -29,6 +29,9 @@ export class Product {
     @Column("varchar")
     s3key: string
 
+    @Column("int", { default: 0 })
+    views: number
+
     @CreateDateColumn()
     createdAt: Date
 

@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Invitation } from "./invitation.entity";
 
@@ -24,7 +24,7 @@ export class Account {
     @Column("int8", { default: 2 })
     maxAllowedBusinesses: number
 
-    @Column("int", { default: 1000 })
+    @Column("int", { default: 50 })
     maxAllowedDailyConversations: number
 
     @Column("boolean", { default: false })
@@ -35,4 +35,11 @@ export class Account {
 
     @CreateDateColumn()
     createdAt: Date
+
+    // Automatically set subscription end date to 30 days after creation
+    @BeforeInsert()
+    setSubscriptionEndDate() {
+        const now = new Date();
+        this.subscriptionEndDate = new Date(now.setDate(now.getDate() + 14));
+    }
 }

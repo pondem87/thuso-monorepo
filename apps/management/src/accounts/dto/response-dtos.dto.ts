@@ -1,4 +1,5 @@
 import { Account } from "../entities/account.entity";
+import { Invitation } from "../entities/invitation.entity";
 import { Permission } from "../entities/permission.entity";
 import { User } from "../entities/user.entity";
 
@@ -8,6 +9,11 @@ export class AccountDto {
     root: UserDto | null;
     users: UserDto[];
     createdAt: Date;
+    invitations: InvitationDto[];
+    maxAllowedBusinesses: number;
+    maxAllowedDailyConversations: number;
+    subscriptionEndDate: Date
+    disabled: boolean
 
     constructor(account: Account) {
         this.id = account.id;
@@ -15,6 +21,11 @@ export class AccountDto {
         this.root = account.root ? new UserDto(account.root) : null;
         this.users = account.users ? account.users.map(user => new UserDto(user)) : [];
         this.createdAt = account.createdAt;
+        this.invitations = account.invitations ? account.invitations.map(invitation => new InvitationDto(invitation)) : [];
+        this.maxAllowedBusinesses = account.maxAllowedBusinesses;
+        this.maxAllowedDailyConversations = account.maxAllowedDailyConversations;
+        this.subscriptionEndDate = account.subscriptionEndDate;
+        this.disabled = account.disabled
     }
 }
 
@@ -36,7 +47,7 @@ export class UserDto {
         this.surname = user.surname;
         this.verified = user.verified;
         this.createdAt = user.createdAt;
-        
+
         if (user.rootOf) {
             this.rootOf = new AccountDto(user.rootOf);
         }
@@ -60,5 +71,19 @@ export class PermissionDto {
         this.accountId = permission.accountId;
         this.entity = permission.entity;
         this.action = permission.action;
+    }
+}
+
+export class InvitationDto {
+    id: string
+    email: string
+    account: Account
+    createdAt: Date
+
+    constructor(invitation: Invitation) {
+        this.id = invitation.id
+        this.email = invitation.email
+        this.account = invitation.account
+        this.createdAt = invitation.createdAt
     }
 }

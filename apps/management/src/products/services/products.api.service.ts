@@ -35,6 +35,23 @@ export class ProductsApiService {
         }
     }
 
+    async getProductForView(businessProfileId: string, id: string) {
+        try {
+            const product = await this.productRepository.findOneOrFail({ where: { businessProfileId, id } })
+            product.views = product.views + 1
+            return await this.productRepository.save(product)
+        } catch (error) {
+            // Check if the error is due to the entity not being found
+            if (error instanceof EntityNotFoundError) {
+                this.logger.debug("Product not found", { businessProfileId, error });
+                throw new HttpException("Product not found", HttpStatus.NOT_FOUND);
+            }
+
+            this.logger.error("Error while getting document", { businessProfileId, error })
+            throw new HttpException(`Error while getting document`, HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
     async listProducts(businessProfileId: string, skip?: number | undefined, take?: number | undefined) {
         try {
             return await this.productRepository.findAndCount({ where: { businessProfileId }, skip, take })

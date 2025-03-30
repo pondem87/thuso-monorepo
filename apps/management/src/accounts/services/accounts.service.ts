@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
@@ -11,10 +11,12 @@ import { CreateAccountAndRootUserDto } from '../dto/create-account-and-root-user
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { PasswordResetDto } from '../dto/password-reset.dto';
-import { UserDto } from '../dto/response-dtos.dto';
+import { AccountDto, UserDto } from '../dto/response-dtos.dto';
 import { Account } from '../entities/account.entity';
 import { Invitation } from '../entities/invitation.entity';
 import { User } from '../entities/user.entity';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { EditUserDto } from '../dto/edit-user.dto';
 
 @Injectable()
 export class AccountsService {
@@ -55,6 +57,22 @@ export class AccountsService {
         }
     }
 
+    async findOneAccountById(id: string): Promise<AccountDto> {
+        try {
+            return new AccountDto(await this.accountRepository.findOne({
+                where: { id },
+                relations: {
+                    root: true,
+                    users: true,
+                    invitations: true
+                }
+            }))
+        } catch (error) {
+            this.logger.error("Failed to retrieve user by id", { error: JSON.stringify(error) })
+            return null
+        }
+    }
+
     async findOneUserByEmail(email: string): Promise<User | null> {
         try {
             return await this.userRepository.findOne({
@@ -66,7 +84,7 @@ export class AccountsService {
                 }
             })
         } catch (error) {
-            this.logger.error("Failed to retrieve user by email", {email, error: JSON.stringify(error) })
+            this.logger.error("Failed to retrieve user by email", { email, error: JSON.stringify(error) })
             return null
         }
     }
@@ -343,5 +361,37 @@ export class AccountsService {
 
     generateWelcomeEmailText(verificationCode: string) {
         return `Welcome to Thuso.\n\nUse this code to verify your account: ${verificationCode}`
+    }
+
+    async changePassword(user: User, changePassDto: ChangePasswordDto) {
+
+        if (!await bcrypt.compare(changePassDto.oldPassword, user.passwordHash)) {
+            throw new UnauthorizedException()
+        }
+
+        if (changePassDto.repeatPassword) {
+            if (!(changePassDto.newPassword === changePassDto.repeatPassword)) {
+                throw new HttpException("Password mismatch", HttpStatus.BAD_REQUEST)
+            }
+        }
+
+        try {
+            user.passwordHash = await bcrypt.hash(changePassDto.newPassword, await bcrypt.genSalt())
+            await this.userRepository.save(user)
+            return { success: true }
+        } catch (error) {
+            this.logger.error("", { error })
+            throw new HttpException("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    async changeUserDetails(user: User, editUserDto: EditUserDto) {
+        const keys = Object.keys(editUserDto)
+
+        for (const key of keys) {
+            user[key] = (editUserDto[key] as string).trim().toLowerCase()
+        }
+
+        return new UserDto(await this.userRepository.save(user))
     }
 }
