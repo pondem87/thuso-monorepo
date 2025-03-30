@@ -128,7 +128,7 @@ export class AccountsService {
             const emailText = this.generateWelcomeEmailText(randomString)
 
 
-            await this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
+            this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
 
             return {
                 email: user.email,
@@ -165,8 +165,8 @@ export class AccountsService {
             throw new HttpException("Wrong Code", HttpStatus.NOT_ACCEPTABLE)
         }
 
-        user.verified = true,
-            user.verificationCode = null
+        user.verified = true
+        user.verificationCode = null
 
         try {
             const newUser = await this.userRepository.save(user)
@@ -202,7 +202,7 @@ export class AccountsService {
         const emailText =
             `Welcome to Thuso.\n\nUse this code to confirm password reset: ${randomString}`
 
-        await this.sendEmail(user.email, "Password Reset Code", emailText, emailHtml)
+        this.sendEmail(user.email, "Password Reset Code", emailText, emailHtml)
 
         return { message: "Password reset code will be sent to the email if it exists" }
     }
@@ -251,7 +251,7 @@ export class AccountsService {
                 `Welcome to Thuso.\n\nYou have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso`
                 + `Use this link to set up your account: ${inviteLink}`
 
-            await this.sendEmail(email, "Thuso Invitation", emailText, emailHtml)
+            this.sendEmail(email, "Thuso Invitation", emailText, emailHtml)
 
             return { message: "Invitation sent" }
         } catch (error) {
@@ -311,7 +311,7 @@ export class AccountsService {
 
             const emailText = this.generateWelcomeEmailText(verificationCode)
 
-            await this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
+            this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
 
 
             // delete invitation
