@@ -5,8 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Invitation } from '../entities/invitation.entity';
-import { MailerService } from '@nestjs-modules/mailer';
 import { Account } from '../entities/account.entity';
+import { MgntRmqClient } from '@lib/thuso-common';
 
 describe('AccountsService', () => {
   let service: AccountsService;
@@ -32,7 +32,7 @@ describe('AccountsService', () => {
                   useValue: {}
                 },
                 {
-                  provide: MailerService,
+                  provide: MgntRmqClient,
                   useValue: {}
                 },
                 {

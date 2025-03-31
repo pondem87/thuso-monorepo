@@ -4,9 +4,11 @@ export const MessageProcessorEventPattern = 'message-processor'
 export const ContactlessMessageProcessorEventPattern = 'contactless-message-processor'
 export const MessengerEventPattern = 'messenger'
 export const LLMEventPattern = 'llm'
+export const SendEmailEventPattern = 'send-email'
 
 export const WhatsappRmqClient = 'whatsapp_rmq_client'
 export const LlmRmqClient = 'llm_rmq_client'
+export const MgntRmqClient = 'mgnt_rmq_client'
 
 export const WHATSAPP_DOCS_MIMETYPES = [
     "text/plain",

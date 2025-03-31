@@ -1,12 +1,10 @@
-import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
-import { ConfigService } from '@nestjs/config';
-import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
-import { generateRandomString } from '@lib/thuso-common';
+import { generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
 import { CreateAccountAndRootUserDto } from '../dto/create-account-and-root-user.dto';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -17,6 +15,7 @@ import { Invitation } from '../entities/invitation.entity';
 import { User } from '../entities/user.entity';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AccountsService {
@@ -30,8 +29,8 @@ export class AccountsService {
         @InjectRepository(Invitation)
         private readonly invitationRepository: Repository<Invitation>,
         private readonly loggingService: LoggingService,
-        private readonly configService: ConfigService,
-        private readonly mailerService: MailerService
+        @Inject(MgntRmqClient)
+        private readonly mgntRmqClient: ClientProxy
     ) {
         this.logger = this.loggingService.getLogger({
             module: "accounts",
@@ -127,8 +126,15 @@ export class AccountsService {
 
             const emailText = this.generateWelcomeEmailText(randomString)
 
-
-            this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
+            this.mgntRmqClient.emit(
+                SendEmailEventPattern,
+                {
+                    email: user.email,
+                    subject: "Account Verification",
+                    text: emailText,
+                    html: emailHtml
+                } as SendEmailQueueMessage
+            )
 
             return {
                 email: user.email,
@@ -138,25 +144,6 @@ export class AccountsService {
         } catch (error) {
             this.logger.error("Failed to create user and account", { error: JSON.stringify(error) })
             return null
-        }
-    }
-
-    async sendEmail(email: string, subject: string, text: string, html: string): Promise<boolean> {
-        try {
-            const info = await this.mailerService.sendMail({
-                to: email,
-                subject,
-                from: `Thuso Information Service ${this.configService.get<string>("EMAIL_USERNAME")}`,
-                text,
-                html
-            })
-
-            this.logger.info("Verification email sent", { info, email })
-            return true
-
-        } catch (error) {
-            this.logger.error("Verification email failed", { error: JSON.stringify(error), email })
-            return false
         }
     }
 
@@ -189,20 +176,23 @@ export class AccountsService {
         await this.userRepository.save(user)
 
         // send to email
-        const emailHtml =
-            `<html>
-                    <head>
-                    <head>
-                    <body>
-                        <h1>Welcome to Thuso</h1>
-                        <p>Use this code to confirm password reset: <strong>${randomString}</strong></p>
-                    </body>
-                </html>`;
+        const emailHtml = this.emailHtmlTemplate(
+            `Reset Thuso Password`,
+            `<p>Use this code to confirm password reset: <strong>${randomString}</strong></p>`
+        )
 
         const emailText =
-            `Welcome to Thuso.\n\nUse this code to confirm password reset: ${randomString}`
+            `Reset Thuso Password\n\nUse this code to confirm password reset: ${randomString}`
 
-        this.sendEmail(user.email, "Password Reset Code", emailText, emailHtml)
+        this.mgntRmqClient.emit(
+            SendEmailEventPattern,
+            {
+                email: user.email,
+                subject: "Password Reset Code",
+                text: emailText,
+                html: emailHtml
+            } as SendEmailQueueMessage
+        )
 
         return { message: "Password reset code will be sent to the email if it exists" }
     }
@@ -236,22 +226,27 @@ export class AccountsService {
             const inviteLink = `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
 
             // send to email
-            const emailHtml =
-                `<html>
-                <head>
-                <head>
-                <body>
-                    <h1>Welcome to Thuso</h1>
-                    <p>You have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso</p>
-                    <p><a href="${inviteLink}">Click here</a> to set up your account.</p>
-                </body>
-            </html>`;
+            const emailHtml = this.emailHtmlTemplate(
+                `Welcome to Thuso`,
+                `
+                <p>You have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso</p>
+                <p><a href="${inviteLink}">Click here</a> to set up your account.</p>
+                `
+            )
 
             const emailText =
                 `Welcome to Thuso.\n\nYou have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso`
                 + `Use this link to set up your account: ${inviteLink}`
 
-            this.sendEmail(email, "Thuso Invitation", emailText, emailHtml)
+            this.mgntRmqClient.emit(
+                SendEmailEventPattern,
+                {
+                    email,
+                    subject: "Thuso Invitation",
+                    text: emailText,
+                    html: emailHtml
+                } as SendEmailQueueMessage
+            )
 
             return { message: "Invitation sent" }
         } catch (error) {
@@ -311,8 +306,15 @@ export class AccountsService {
 
             const emailText = this.generateWelcomeEmailText(verificationCode)
 
-            this.sendEmail(user.email, "Account Verification", emailText, emailHtml)
-
+            this.mgntRmqClient.emit(
+                SendEmailEventPattern,
+                {
+                    email: user.email,
+                    subject: "Account Verification",
+                    text: emailText,
+                    html: emailHtml
+                } as SendEmailQueueMessage
+            )
 
             // delete invitation
             await this.invitationRepository.delete({ id: invitationId })
@@ -349,14 +351,13 @@ export class AccountsService {
     }
 
     generateWelcomeEmailHtml(verificationCode: string) {
-        return `<html>
-                    <head>
-                    <head>
-                    <body>
-                        <h1>Welcome to Thuso</h1>
-                        <p>Use this code to verify your account: <strong>${verificationCode}</strong></p>
-                    </body>
-                </html>`;
+        return this.emailHtmlTemplate(
+            `Welcome to Thuso`,
+            `
+                <p>Use this code to verify your account: <strong>${verificationCode}</strong></p>
+                <p>We hope you will make the most of your Thuso account. We are continuously adding more exciting features to make you get the best value.</p>
+            `
+        )
     }
 
     generateWelcomeEmailText(verificationCode: string) {
@@ -393,5 +394,65 @@ export class AccountsService {
         }
 
         return new UserDto(await this.userRepository.save(user))
+    }
+
+    emailHtmlTemplate(heading: string, content: string) {
+        return `<html>
+                    <head>
+                        <style>
+                            .container {
+                                display: flex;
+                                justify-content: center;
+                                padding-top: 2em;
+                            }
+                            .content {
+                                width: 50%;
+                                padding: 20px;
+                                background-color: #f5f5f5;
+                                /* Light gray background */
+                                border-radius: 10px;
+                                /* Rounded corners */
+                                border: 1px solid #ccc;
+                                /* Subtle border */
+                                text-align: center;
+                                /* Center text */
+                                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+                                /* Soft shadow */
+                                font-family: Arial, sans-serif;
+                            }
+                            .heading {
+                                padding: 1em;
+                            }
+                            .main {
+                                text-align: left;
+                                font-size: large;
+                                font-weight: 500;
+                                padding-left: 4em;
+                                padding-right: 4em;
+                            }
+                            .footer {
+                                margin-top: 4em;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="content">
+                                <img src="https://thuso.pfitztronic.co.bw/images/thuso-logo.png" alt="thuso logo" width="200" />
+                                <h1 class="heading">${heading}</h1>
+                                <div class="main">
+                                    ${content}
+                                </div>
+                                <div class="footer">
+                                    <p>Thuso is a product of Pfitztronic Proprietary Limited.</p>
+                                    <p>For more information visit our websites for <a href="https://thuso.pfitztronic.co.bw">Thuso</a> and
+                                        <a href="https://www.pfitztronic.co.bw">Pfitztronic</a></p>
+                                    <p>You can contact us on tendai@pfitztronic.co.bw or takudzwa@pfitztronic.co.bw</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </body>
+                </html>`
     }
 }

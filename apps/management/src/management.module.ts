@@ -33,21 +33,6 @@ import * as fs from "fs"
       }),
       inject: [ConfigService]
     }),
-    MailerModule.forRootAsync({
-      imports: [ConfigModule], // Import the ConfigModule to access environment variables
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('EMAIL_HOST'),
-          port: 465,
-          secure: true,
-          auth: {
-            user: configService.get<string>('EMAIL_USERNAME'),
-            pass: configService.get<string>('EMAIL_PASSWORD'),
-          },
-        },
-      }),
-      inject: [ConfigService]
-    }),
     AccountsModule, AuthModule, BusinessesModule, DocumentsModule, ProductsModule],
   controllers: [ManagementController],
   providers: [ManagementService],

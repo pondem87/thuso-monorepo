@@ -1,7 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt'
-import { MailerService } from '@nestjs-modules/mailer';
-import { generateRandomString, LONG_TEST_TIMEOUT } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, SendEmailEventPattern } from '@lib/thuso-common';
 import { INestApplication } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from '../../src/accounts/entities/user.entity';
@@ -19,31 +18,28 @@ describe('Accounts Invitations (e2e)', () => {
     let userRepository: Repository<User>
     let accountRepository: Repository<Account>
     let invitationRepository: Repository<Invitation>
-    let mailerService: MailerService
-    let sendMailSpy: jest.SpyInstance
+
 
     const testUserEmail1 = `${generateRandomString(8, "alpha-numeric")}@gmail.com`
     const testAccountName1 = `${generateRandomString(8, "alpha-numeric")}-pfitztronic`
     const testUserEmail2 = `${generateRandomString(8, "alpha-numeric")}@gmail.com`
-    const testAccountName2 = `${generateRandomString(8, "alpha-numeric")}-pfitztronic`
+    // const testAccountName2 = `${generateRandomString(8, "alpha-numeric")}-pfitztronic`
+
+    const mgntQClient = { emit: jest.fn() }
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [ManagementModule],
         })
-        .overrideProvider(MailerService).useValue({ sendMail: jest.fn() })
-        .compile();
+            .overrideProvider(MgntRmqClient).useValue(mgntQClient)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         invitationRepository = moduleFixture.get<Repository<Invitation>>(getRepositoryToken(Invitation))
         userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User))
         accountRepository = moduleFixture.get<Repository<Account>>(getRepositoryToken(Account))
         userTokenRepository = moduleFixture.get<Repository<UserToken>>(getRepositoryToken(UserToken))
-        mailerService = moduleFixture.get<MailerService>(MailerService)
         await app.init();
-
-        // get sendmail spy
-        sendMailSpy = jest.spyOn(mailerService, "sendMail")
 
         // make sure no duplicate records
         await invitationRepository.delete({})
@@ -107,16 +103,17 @@ describe('Accounts Invitations (e2e)', () => {
             })
 
         // check email was sent
-        expect(sendMailSpy).toHaveBeenCalledTimes(1)
+        expect(mgntQClient.emit).toHaveBeenCalledTimes(1)
 
         // check email was sent to correct address
-        expect(sendMailSpy).toHaveBeenCalledWith(expect.objectContaining({
-            to: testUserEmail2,
-            subject: "Thuso Invitation",
-            from: expect.any(String),
-            text: expect.any(String),
-            html: expect.any(String)
-        }))
+        expect(mgntQClient.emit).toHaveBeenCalledWith(
+            SendEmailEventPattern,
+            expect.objectContaining({
+                email: testUserEmail2,
+                subject: "Thuso Invitation",
+                text: expect.any(String),
+                html: expect.any(String)
+            }))
 
         // use invite
         const invite = await invitationRepository.findOneBy({ email: testUserEmail2 })
@@ -135,14 +132,15 @@ describe('Accounts Invitations (e2e)', () => {
             })
 
         // check verication email was sent
-        expect(sendMailSpy).toHaveBeenCalledTimes(2)
-        expect(sendMailSpy).toHaveBeenCalledWith(expect.objectContaining({
-            to: testUserEmail2,
-            subject: "Account Verification",
-            from: expect.any(String),
-            text: expect.any(String),
-            html: expect.any(String)
-        }))
+        expect(mgntQClient.emit).toHaveBeenCalledTimes(2)
+        expect(mgntQClient.emit).toHaveBeenCalledWith(
+            SendEmailEventPattern,
+            expect.objectContaining({
+                email: testUserEmail2,
+                subject: "Account Verification",
+                text: expect.any(String),
+                html: expect.any(String)
+            }))
 
 
         // check user was added to account

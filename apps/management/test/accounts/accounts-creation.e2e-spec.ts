@@ -7,8 +7,7 @@ import { User } from '../../src/accounts/entities/user.entity';
 import { Account } from '../../src/accounts/entities/account.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt'
-import { MailerService } from '@nestjs-modules/mailer';
-import { generateRandomString, LONG_TEST_TIMEOUT } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, SendEmailEventPattern } from '@lib/thuso-common';
 import { AccountsController } from '../../src/accounts/controllers/accounts.controller';
 
 describe('Accounts Creation (e2e)', () => {
@@ -16,28 +15,24 @@ describe('Accounts Creation (e2e)', () => {
     let accountsController: AccountsController
     let userRepository: Repository<User>
     let accountRepository: Repository<Account>
-    let mailerService: MailerService
-    let sendMailSpy: jest.SpyInstance
 
     const testUserEmail1 = `${generateRandomString(8, "alpha-numeric").toLowerCase()}@gmail.com`
     const testAccountName1 = `${generateRandomString(8, "alpha-numeric").toLowerCase()}-pfitztronic`
+
+    const mgntQClient = { emit: jest.fn() }
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [ManagementModule],
         })
-        .overrideProvider(MailerService).useValue({ sendMail: jest.fn() })
-        .compile();
+            .overrideProvider(MgntRmqClient).useValue(mgntQClient)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         accountsController = moduleFixture.get<AccountsController>(AccountsController)
         userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User))
         accountRepository = moduleFixture.get<Repository<Account>>(getRepositoryToken(Account))
-        mailerService = moduleFixture.get<MailerService>(MailerService)
         await app.init();
-
-        // get sendmail spy
-        sendMailSpy = jest.spyOn(mailerService, "sendMail")
 
         // make sure no duplicate records
         await accountRepository.delete({ name: testAccountName1 })
@@ -77,9 +72,11 @@ describe('Accounts Creation (e2e)', () => {
         expect(res.email).toEqual(data.email)
         expect(res.accountName).toEqual(data.accountName)
 
-        expect(sendMailSpy).toHaveBeenCalledTimes(1)
-        expect(sendMailSpy).toHaveBeenCalledWith(expect.objectContaining({
-            to: data.email
-        }))
+        expect(mgntQClient.emit).toHaveBeenCalledTimes(1)
+        expect(mgntQClient.emit).toHaveBeenCalledWith(
+            SendEmailEventPattern,
+            expect.objectContaining({
+                email: data.email
+            }))
     }, LONG_TEST_TIMEOUT);
 });

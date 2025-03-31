@@ -6,7 +6,7 @@ import { BusinessesApiService } from "../services/businesses.api.service"
 
 @UseGuards(ApiAuthGuard)
 @Controller('api/businesses')
-export class ProductsApiController {
+export class BusinessesApiController {
     private logger: Logger
 
     constructor (

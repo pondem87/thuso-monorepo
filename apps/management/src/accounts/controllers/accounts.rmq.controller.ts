@@ -1,13 +1,13 @@
 import { LoggingService } from "@lib/logging"
-import { ApiAuthGuard, SendEmailEventPattern, SendEmailQueueMessage } from "@lib/thuso-common"
-import { Controller, Get, Param, UseGuards } from "@nestjs/common"
+import { SendEmailEventPattern, SendEmailQueueMessage } from "@lib/thuso-common"
+import { Controller } from "@nestjs/common"
 import { Logger } from "winston"
 import { AccountsApiService } from "../services/accounts.api.service"
 import { Ctx, MessagePattern, Payload, RmqContext } from "@nestjs/microservices"
 
-@UseGuards(ApiAuthGuard)
-@Controller('api/accounts')
-export class AccountsApiController {
+
+@Controller('rmq/accounts')
+export class AccountsRmqController {
     private logger: Logger
 
     constructor (
@@ -16,16 +16,17 @@ export class AccountsApiController {
     ) {
         this.logger = this.loggingService.getLogger({
             module: "accounts",
-            file: "accounts.api.controller"
+            file: "accounts.rmq.controller"
         })
 
         this.logger.info("Businesses API Controller initialized")
     }
 
-    @Get(":accountId")
-    getAccountInfo (
-        @Param('accountId') accountId: string
+    @MessagePattern(SendEmailEventPattern)
+    sendEmail(
+        @Payload() data: SendEmailQueueMessage,
+        @Ctx() ctx: RmqContext
     ) {
-        return this.accountsApiService.getAccountInfo(accountId)
+        return this.accountsApiService.sendEmail(data, ctx)
     }
 }

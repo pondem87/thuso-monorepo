@@ -45,3 +45,10 @@ export type LLMQueueMessage = {
     contact: Contact;
     prompt: string
 }
+
+export type SendEmailQueueMessage = {
+    email: string,
+    subject: string,
+    text: string,
+    html: string
+}

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ManagementModule } from '../../src/management.module';
-import { generateRandomString, LONG_TEST_TIMEOUT } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient } from '@lib/thuso-common';
 import { Account } from '../../src/accounts/entities/account.entity';
 import { User } from '../../src/accounts/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -13,7 +13,6 @@ import { JwtPayload } from '../../src/auth/types';
 import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
-import { MailerService } from '@nestjs-modules/mailer';
 
 describe('ManagementController (e2e)', () => {
     let app: INestApplication;
@@ -22,8 +21,6 @@ describe('ManagementController (e2e)', () => {
     let userTokenRepository: Repository<UserToken>
     let jwtService: JwtService
     let configService: ConfigService
-    let mailerService: MailerService
-    let sendMailSpy: jest.SpyInstance
 
     const testUserEmail1 = `${generateRandomString(8, "alpha-numeric")}@gmail.com`
     const testAccountName1 = `${generateRandomString(8, "alpha-numeric")}-pfitztronic`
@@ -32,7 +29,6 @@ describe('ManagementController (e2e)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [ManagementModule],
         })
-        .overrideProvider(MailerService).useValue({ sendMail: jest.fn() })
         .compile();
 
         app = moduleFixture.createNestApplication();
@@ -44,10 +40,6 @@ describe('ManagementController (e2e)', () => {
         userTokenRepository = moduleFixture.get<Repository<UserToken>>(getRepositoryToken(UserToken))
         jwtService = moduleFixture.get<JwtService>(JwtService)
         configService = moduleFixture.get<ConfigService>(ConfigService)
-        mailerService = moduleFixture.get<MailerService>(MailerService)
-
-        // get sendmail spy
-        sendMailSpy = jest.spyOn(mailerService, "sendMail")
 
         // make sure no duplicate records
         await accountRepository.delete({ name: testAccountName1 })
