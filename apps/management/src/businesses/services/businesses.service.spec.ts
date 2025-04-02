@@ -7,6 +7,7 @@ import { BusinessProfile } from '../entities/business-profile.entity';
 import { Account } from '../../accounts/entities/account.entity';
 import { WhatsAppBusiness } from '../entities/whatsapp-business.entity';
 import { ConfigService } from '@nestjs/config';
+import { MgntRmqClient } from '@lib/thuso-common';
 
 describe('BusinessesService', () => {
   let service: BusinessesService;
@@ -33,6 +34,10 @@ describe('BusinessesService', () => {
         },
         {
           provide: getRepositoryToken(BusinessProfile),
+          useValue: {}
+        },
+        {
+          provide: MgntRmqClient,
           useValue: {}
         },
         {

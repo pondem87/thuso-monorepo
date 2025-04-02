@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Post, Body, Param, Get, Delete, Patch } from '@nestjs/common';
+import { Controller, UseGuards, Post, Body, Request, Param, Get, Delete, Patch } from '@nestjs/common';
 import { AuthGuard } from '../../auth/auth-guard';
 import { PermissionsGuard } from '../../accounts/permissions-guard';
 import { LoggingService } from '@lib/logging';
@@ -9,6 +9,7 @@ import { CreateBusinessDto } from '../dto/create-business.dto';
 import { CreateBusinessProfileDto } from '../dto/create-business-profile.dto';
 import { UpdateBusinessProfileDto } from '../dto/update-business-profile.dto';
 import { BusinessesService } from '../services/businesses.service';
+import { User } from '../../accounts/entities/user.entity';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller("management/:account/businesses")
@@ -33,9 +34,11 @@ export class BusinessesController {
     @Post()
     createWhatsAppBusiness(
         @Body() data: CreateBusinessDto,
-        @Param('account') accountId: string
+        @Param('account') accountId: string,
+        @Request() request
     ) {
-        this.businessesService.createWhatsAppBusiness(accountId, data)
+        const { user }: { user: User } = request
+        return this.businessesService.createWhatsAppBusiness(user, accountId, data)
     }
 
     @PermissionsDecorator([

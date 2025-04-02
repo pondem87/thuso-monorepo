@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
 import * as bcrypt from 'bcrypt';
-import { generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
+import { emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
 import { CreateAccountAndRootUserDto } from '../dto/create-account-and-root-user.dto';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -157,6 +157,15 @@ export class AccountsService {
 
         try {
             const newUser = await this.userRepository.save(user)
+            this.mgntRmqClient.emit(
+                SendEmailEventPattern,
+                {
+                    email: user.email,
+                    subject: "Thuso: Next Steps",
+                    text: this.genarateNextStepsEmailText(`${user.forenames} ${user.surname}`),
+                    html: this.generateNextStepsEmailHtml(`${user.forenames} ${user.surname}`)
+                } as SendEmailQueueMessage
+            )
             return new UserDto(newUser)
         } catch (error) {
             this.logger.error("Failed to save user after verification", { email: user.email, error: JSON.stringify(error) })
@@ -176,7 +185,7 @@ export class AccountsService {
         await this.userRepository.save(user)
 
         // send to email
-        const emailHtml = this.emailHtmlTemplate(
+        const emailHtml = emailHtmlTemplate(
             `Reset Thuso Password`,
             `<p>Use this code to confirm password reset: <strong>${randomString}</strong></p>`
         )
@@ -226,7 +235,7 @@ export class AccountsService {
             const inviteLink = `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
 
             // send to email
-            const emailHtml = this.emailHtmlTemplate(
+            const emailHtml = emailHtmlTemplate(
                 `Welcome to Thuso`,
                 `
                 <p>You have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso</p>
@@ -350,20 +359,6 @@ export class AccountsService {
         }
     }
 
-    generateWelcomeEmailHtml(verificationCode: string) {
-        return this.emailHtmlTemplate(
-            `Welcome to Thuso`,
-            `
-                <p>Use this code to verify your account: <strong>${verificationCode}</strong></p>
-                <p>We hope you will make the most of your Thuso account. We are continuously adding more exciting features to make you get the best value.</p>
-            `
-        )
-    }
-
-    generateWelcomeEmailText(verificationCode: string) {
-        return `Welcome to Thuso.\n\nUse this code to verify your account: ${verificationCode}`
-    }
-
     async changePassword(user: User, changePassDto: ChangePasswordDto) {
 
         if (!await bcrypt.compare(changePassDto.oldPassword, user.passwordHash)) {
@@ -396,63 +391,77 @@ export class AccountsService {
         return new UserDto(await this.userRepository.save(user))
     }
 
-    emailHtmlTemplate(heading: string, content: string) {
-        return `<html>
-                    <head>
-                        <style>
-                            .container {
-                                display: flex;
-                                justify-content: center;
-                                padding-top: 2em;
-                            }
-                            .content {
-                                width: 50%;
-                                padding: 20px;
-                                background-color: #f5f5f5;
-                                /* Light gray background */
-                                border-radius: 10px;
-                                /* Rounded corners */
-                                border: 1px solid #ccc;
-                                /* Subtle border */
-                                text-align: center;
-                                /* Center text */
-                                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-                                /* Soft shadow */
-                                font-family: Arial, sans-serif;
-                            }
-                            .heading {
-                                padding: 1em;
-                            }
-                            .main {
-                                text-align: left;
-                                font-size: large;
-                                font-weight: 500;
-                                padding-left: 4em;
-                                padding-right: 4em;
-                            }
-                            .footer {
-                                margin-top: 4em;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="content">
-                                <img src="https://thuso.pfitztronic.co.bw/images/thuso-logo.png" alt="thuso logo" width="200" />
-                                <h1 class="heading">${heading}</h1>
-                                <div class="main">
-                                    ${content}
-                                </div>
-                                <div class="footer">
-                                    <p>Thuso is a product of Pfitztronic Proprietary Limited.</p>
-                                    <p>For more information visit our websites for <a href="https://thuso.pfitztronic.co.bw">Thuso</a> and
-                                        <a href="https://www.pfitztronic.co.bw">Pfitztronic</a></p>
-                                    <p>You can contact us on tendai@pfitztronic.co.bw or takudzwa@pfitztronic.co.bw</p>
-                                </div>
-                            </div>
-
-                        </div>
-                    </body>
-                </html>`
+    generateWelcomeEmailHtml(verificationCode: string) {
+        return emailHtmlTemplate(
+            `Welcome to Thuso`,
+            `
+                <p>Use this code to verify your account: <strong>${verificationCode}</strong></p>
+                <p>We hope you will make the most of your Thuso account. We are continuously adding more exciting features to make you get the best value.</p>
+            `
+        )
     }
+
+    generateWelcomeEmailText(verificationCode: string) {
+        return `Welcome to Thuso.\n\nUse this code to verify your account: ${verificationCode}`
+    }
+
+    generateNextStepsEmailHtml(name: string) {
+        return emailHtmlTemplate(
+            `Next Steps`,
+            `
+            <h2>Dear ${name},</h2>
+            <p>Congratulations! Your Thuso account has been successfully verified. You are now just a few steps away from setting up your WhatsApp chatbot.</p>
+
+            <h3>What’s Next?</h3>
+            <ol>
+                <li><strong>Create Your WhatsApp Business Account</strong><br>
+                    - Click <a href="https://manage.thuso.pfitztronic.co.bw">here</a> to log in to Thuso and start your setup.<br>
+                    - You will need a Facebook account and a phone number that is not currently in use on WhatsApp.
+                </li>
+                <li><strong>Link Your WhatsApp Number</strong><br>
+                    - Follow the guided steps to connect your WhatsApp number.<br>
+                    - This number will be used by your chatbot to interact with customers.
+                </li>
+                <li><strong>Set Up Your Business Profile</strong><br>
+                    - Fill in key business details to help Thuso provide accurate responses.<br>
+                    - Upload FAQs, business documents, and customer service guides.
+                </li>
+                <li><strong>Upload Your Product Catalogue</strong><br>
+                    - Showcase your products by adding descriptions, images, and PDFs.<br>
+                    - Your customers will be able to browse and interact with your listings.
+                </li>
+            </ol>
+
+            <h3>Need Help?</h3>
+            <p>If you have any questions or need support, visit our <a href="https://thuso.pfitztronic.co.bw">website</a> or reply to this email.</p>
+
+            <p>We’re excited to have you on board!</p>
+            <p><strong>Best regards,</strong><br>The Thuso Team</p>
+            `
+        )
+    }
+
+    genarateNextStepsEmailText(name: string) {
+        return `
+        Dear ${name},\n\n
+        Congratulations! Your Thuso account has been successfully verified. You are now just a few steps away from setting up your WhatsApp chatbot.\n\n
+        What’s Next?\n
+        1. Create Your WhatsApp Business Account\n
+        - Click here to log in to Thuso and start your setup.\n
+        - You will need a Facebook account and a phone number that is not currently in use on WhatsApp.\n
+        2. Link Your WhatsApp Number\n
+        - Follow the guided steps to connect your WhatsApp number.\n
+        - This number will be used by your chatbot to interact with customers.\n
+        3. Set Up Your Business Profile\n- Fill in key business details to help Thuso provide accurate responses.\n
+        - Upload FAQs, business documents, and customer service guides.\n
+        4. Upload Your Product Catalogue\n
+        - Showcase your products by adding descriptions, images, and PDFs.\n
+        - Your customers will be able to browse and interact with your listings.\n\n
+        Need Help?\n
+        If you have any questions or need support, visit our website or reply to this email.\n\n
+        We’re excited to have you on board!\n
+        Best regards,\n
+        The Thuso Team`
+    }
+
 }

@@ -18,6 +18,7 @@ export function generateRandomString(length: number, mode: "alpha-numeric-caps" 
             break;
         case "numeric":
             characters = '0123456789'
+            break;
         default:
             characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             break;
@@ -99,4 +100,73 @@ export function cropTextToLength(text: string, length: number): string {
 
 export function getDateOnly(date: Date): string {
     return date.toISOString().split("T")[0];
+}
+
+export function emailHtmlTemplate(heading: string, content: string) {
+    return `<html>
+                <head>
+                    <style>
+                        .container {
+                            display: flex;
+                            justify-content: center;
+                            padding-top: 2em;
+                            min-width: 768px;
+                        }
+
+                        .content {
+                            width: 60%;
+                            padding: 20px;
+                            background-color: #f5f5f5;
+                            /* Light gray background */
+                            border-radius: 10px;
+                            /* Rounded corners */
+                            border: 1px solid #ccc;
+                            /* Subtle border */
+                            text-align: center;
+                            /* Center text */
+                            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+                            /* Soft shadow */
+                            font-family: Arial, sans-serif;
+                        }
+
+                        .heading {
+                            padding: 1em;
+                        }
+
+                        .main {
+                            text-align: left;
+                            font-size: large;
+                            font-weight: 500;
+                            padding-left: 4em;
+                            padding-right: 4em;
+                        }
+                        .footer {
+                            margin-top: 4em;
+                        }
+                        @media (max-width: 1024px) { /* For tablets and smaller screens */
+                            .content {
+                                width: 90%; /* Fill 90% of the screen width on smaller devices */
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="content">
+                            <img src="https://thuso.pfitztronic.co.bw/images/thuso-logo.png" alt="thuso logo" width="200" />
+                            <h1 class="heading">${heading}</h1>
+                            <div class="main">
+                                ${content}
+                            </div>
+                            <div class="footer">
+                                <p>Thuso is a product of Pfitztronic Proprietary Limited.</p>
+                                <p>For more information visit our websites for <a href="https://thuso.pfitztronic.co.bw">Thuso</a> and
+                                    <a href="https://www.pfitztronic.co.bw">Pfitztronic</a></p>
+                                <p>You can contact us on tendai@pfitztronic.co.bw or takudzwa@pfitztronic.co.bw</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </body>
+            </html>`
 }

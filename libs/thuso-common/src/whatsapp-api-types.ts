@@ -720,3 +720,15 @@ export const CHAR_LIMITS = {
     BUTTON_LABEL_TEXT: 20,
     BODY_TEXT: 1024
 }
+
+
+// API ERRORS
+export type APIError = {
+    message: string, 
+    type: string, 
+    code: number,
+    error_subcode?: number,
+    error_user_title?: string,
+    error_user_msg?: string,
+    fbtrace_id: string
+  }

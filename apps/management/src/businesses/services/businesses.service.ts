@@ -1,10 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { LoggingService } from '@lib/logging';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { ConfigService } from '@nestjs/config';
 import { DeleteResult, EntityNotFoundError, Repository } from 'typeorm';
-import { generateRandomString } from '@lib/thuso-common';
+import { APIError, emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
 import { WhatsAppBusiness } from '../entities/whatsapp-business.entity';
 import { WhatsAppNumber } from '../entities/whatsapp-number';
 import { Account } from '../../accounts/entities/account.entity';
@@ -13,6 +13,8 @@ import { CreateBusinessDto } from '../dto/create-business.dto';
 import { WhatsAppBusinessDto, WhatsAppNumberDto, BusinessProfileDto } from '../dto/response-dtos.dto';
 import { UpdateBusinessProfileDto } from '../dto/update-business-profile.dto';
 import { BusinessProfile } from '../entities/business-profile.entity';
+import { ClientProxy } from '@nestjs/microservices';
+import { User } from '../../accounts/entities/user.entity';
 
 @Injectable()
 export class BusinessesService {
@@ -28,7 +30,9 @@ export class BusinessesService {
         @InjectRepository(Account)
         private readonly accountRepository: Repository<Account>,
         private readonly loggingService: LoggingService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        @Inject(MgntRmqClient)
+        private readonly mgntRmqClient: ClientProxy
     ) {
         this.logger = this.loggingService.getLogger({
             module: "businesses",
@@ -38,7 +42,7 @@ export class BusinessesService {
         this.logger.info("Businesses service created")
     }
 
-    async createWhatsAppBusiness(accountId: string, data: CreateBusinessDto) {
+    async createWhatsAppBusiness(user: User, accountId: string, data: CreateBusinessDto): Promise<{ waba: WhatsAppBusinessDto, appNumber: WhatsAppNumberDto} | { error: string }> {
         // Get business token from meta
         try {
             const accessTokenUrlRoot = `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/oauth/access_token`
@@ -54,7 +58,8 @@ export class BusinessesService {
                 throw new Error(`Failed to retrieve business token: ${JSON.stringify(await businessTokenResponse.json())}`)
             }
 
-            const businessToken = await businessTokenResponse.text()
+            const businessTokenData = await businessTokenResponse.json()
+            const businessToken = businessTokenData.access_token
 
             // if we get a business token we then create resources
             let business = await this.whatsappBusinessRepository.findOne({ where: { accountId, wabaId: data.wabaId }, relations: { appNumbers: true } })
@@ -143,7 +148,22 @@ export class BusinessesService {
                     appNumber = await this.whatsappNumberRepository.save(appNumber)
                 }
             } else {
-                this.logger.warn("Failed to register WhatsApp", { waba_id: business.wabaId, phone_number_id: appNumber.appNumberId, response: await registerResponse.json(), status_code: registerResponse.status })
+                const res = await registerResponse.json()
+                this.logger.warn("Failed to register WhatsApp Number", { waba_id: business.wabaId, phone_number_id: appNumber.appNumberId, response: res, status_code: registerResponse.status })
+                if (res.error) {
+                    const apiError: APIError = res.error
+                    if (apiError.type === "OAuthException" && apiError.code === 133005) {
+                        // This means the pin is incorrect
+                        // Send email to user notify that a pin change is required
+                        this.logger.warn("Pin change required", { accountId, phone_number_id: appNumber.appNumberId })
+                        this.mgntRmqClient.emit(SendEmailEventPattern, {
+                            email: user.email,
+                            subject: "Thuso: WhatsApp Number Pin Change Required",
+                            html: this.generatePinChangeEmail("WhatsApp Number Pin Change Required"),
+                            text: this.genetePinChangeEmailText("WhatsApp Number Pin Change Required")
+                        } as SendEmailQueueMessage)
+                    }
+                }
             }
 
             return {
@@ -157,7 +177,7 @@ export class BusinessesService {
         }
     }
 
-    async getDisplayNumber(accountId: string, id: string): Promise<WhatsAppNumberDto> {
+    async getDisplayNumber(accountId: string, id: string): Promise<{ success: boolean }> {
         try {
             const appNumber = await this.whatsappNumberRepository.findOne({ where: { accountId, id }, relations: { waba: true } })
 
@@ -205,9 +225,8 @@ export class BusinessesService {
             // }
 
             appNumber.appNumber = thisWabaNumber.display_phone_number as string
-
-            return new WhatsAppNumberDto(await this.whatsappNumberRepository.save(appNumber))
-
+            await this.whatsappNumberRepository.save(appNumber)
+            return { success: true }
         } catch (error) {
             this.logger.error("Error while getting display number", { accountId, error: JSON.stringify(error) })
             throw new HttpException("Error while getting display number", HttpStatus.INTERNAL_SERVER_ERROR)
@@ -216,7 +235,7 @@ export class BusinessesService {
 
     async getBusinessName(accountId: string, id: string): Promise<WhatsAppBusinessDto> {
         try {
-            const business = await this.whatsappBusinessRepository.findOne({ where: { accountId, id } })
+            const business = await this.whatsappBusinessRepository.findOne({ where: { accountId, id }, relations: { appNumbers: true } })
 
             const businessNameResponse = await fetch(
                 `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/${business.wabaId}`,
@@ -273,14 +292,14 @@ export class BusinessesService {
 
             if (!registerResponse.ok) {
                 this.logger.error("Failed to register number", { accountId, numberId: id, response: await registerResponse.json() })
-                throw new Error(`Failed to register number: ${JSON.stringify(await registerResponse.json())}`)
+                return { success: false }
             }
 
             const result = await registerResponse.json()
             appNumber.registered = result.success
-            await this.whatsappBusinessRepository.save(appNumber)
+            await this.whatsappNumberRepository.save(appNumber)
 
-            return result as { success: boolean }
+            return { success: true }
         } catch (error) {
             this.logger.error("Failed to register number", { accountId, numberId: id, error: JSON.stringify(error) })
             throw new HttpException("Failed to register number", HttpStatus.INTERNAL_SERVER_ERROR)
@@ -289,7 +308,7 @@ export class BusinessesService {
 
     async subscribeBusiness(accountId: string, id: string) {
         try {
-            const business = await this.whatsappBusinessRepository.findOneBy({ accountId, id })
+            const business = await this.whatsappBusinessRepository.findOne({ where: { accountId, id }, relations: { appNumbers: true } })
             // subscribe to the business webhooks
             const subscribeResponse = await fetch(
                 `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/${business.wabaId}/subscribed_apps`,
@@ -308,9 +327,8 @@ export class BusinessesService {
 
             const result = await subscribeResponse.json()
             business.subscribed = result.success
-            await this.whatsappBusinessRepository.save(business)
 
-            return result as { success: boolean }
+            return new WhatsAppBusinessDto(await this.whatsappBusinessRepository.save(business))
         } catch (error) {
             this.logger.error("Failed to subscribe WABA", { accountId, businessId: id, error: JSON.stringify(error) })
             throw new HttpException("Failed to subscribe WABA", HttpStatus.INTERNAL_SERVER_ERROR)
@@ -343,6 +361,34 @@ export class BusinessesService {
 
     async deleteAppNumber(accountId: string, id: string) {
         try {
+            // deregister phone number
+            const appNumber = await this.whatsappNumberRepository.findOne({ where: { accountId, id }, relations: { waba: true } })
+
+            const deregisterResponse = await fetch(
+                `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/${appNumber.appNumberId}/deregister`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${appNumber.waba.wabaToken}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            )
+
+            if (!deregisterResponse.ok) {
+                const errorResponse = await deregisterResponse.json()
+                this.logger.warn("Failed to deregister number", { accountId, numberId: id, response: errorResponse })
+                if (errorResponse.error) {
+                    const apiError: APIError = errorResponse.error
+                    if (apiError.type === "OAuthException" && apiError.code === 100) {
+                        // This means the number is already deregistered
+                        this.logger.info("Number already deregistered", { accountId, numberId: id })
+                    } else {
+                        throw new HttpException(`Failed to deregister number: ${apiError.message}`, HttpStatus.INTERNAL_SERVER_ERROR)
+                    }
+                }
+            }
+
             return await this.whatsappNumberRepository.delete({ accountId, id })
         } catch (error) {
             this.logger.error("Failed to delete whatsapp number", { accountId, numberId: id, error })
@@ -352,7 +398,32 @@ export class BusinessesService {
 
     async deleteBusiness(accountId: string, id: string): Promise<DeleteResult> {
         try {
-            await this.whatsappNumberRepository.delete({ accountId, waba: { id } })
+            const waba = await this.whatsappBusinessRepository.findOne({ where: { accountId, id }, relations: { appNumbers: true } })
+
+            if (waba) {
+                if (waba.appNumbers && waba.appNumbers.length > 0) {
+                    for (const number of waba.appNumbers) {
+                        await this.deleteAppNumber(accountId, number.id)
+                    }
+                }
+            }
+
+            // unsubscribe from the business webhooks
+            const unsubscribeResponse = await fetch(
+                `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/${waba.wabaId}/subscribed_apps`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${waba.wabaToken}`
+                    }
+                }
+            )
+
+            if (!unsubscribeResponse.ok) {
+                this.logger.error("Failed to unsubscribe WABA", { accountId, businessId: id, response: await unsubscribeResponse.json() })
+                throw new Error(`Failed to unsubscribe WABA: ${JSON.stringify(await unsubscribeResponse.json())}`)
+            }
+
             return await this.whatsappBusinessRepository.delete({ accountId, id })
         } catch (error) {
             this.logger.error("Error while deleting business", { accountId, error: JSON.stringify(error) })
@@ -471,5 +542,66 @@ export class BusinessesService {
             this.logger.error("Error while getting profiles", { accountId })
             throw new HttpException("Error while getting profiles", HttpStatus.INTERNAL_SERVER_ERROR)
         }
+    }
+
+
+
+
+    // Emails
+    generatePinChangeEmail(heading: string) {
+        return emailHtmlTemplate(
+            heading,
+            `
+            <p>Dear User,</p>
+            <p>We noticed that you attempted to register your number with Thuso, but the process was unsuccessful due to a two-factor authentication PIN issue.
+                This may be caused by WhatsApp Cloud API requiring the previously set PIN, even after the number is deleted from Thuso.</p>
+            <p>To resolve this, you have two options:</p>
+            <ol>
+                <li>Manually delete the number from your WhatsApp Business Account through the Facebook Business Manager console.</li>
+                <li>Update your PIN in WhatsApp Manager to match the one generated in Thuso.</li>
+            </ol>
+            <p><strong>How to Update Your PIN in WhatsApp Manager:</strong></p>
+            <ol>
+                <li>Go to <a href="https://business.facebook.com/">Facebook Business</a> and log into your account.</li>
+                <li>Select the business managing your WhatsApp Business Account (WABA).</li>
+                <li>Click on <strong>WhatsApp Accounts</strong> and find the WABA linked to your number.</li>
+                <li>Click on the WABA to open the info panel.</li>
+                <li>Under <strong>Settings</strong>, click <strong>WhatsApp Manager</strong>.</li>
+                <li>Locate your phone number and go to <strong>Settings</strong>.</li>
+                <li>Click on <strong>Two-step verification</strong>.</li>
+                <li>Select <strong>Change PIN</strong> and enter a new PIN.</li>
+                <li>Confirm the new PIN to complete the update.</li>
+            </ol>
+            <p>Once you have updated your PIN, please try registering your number with Thuso again.</p>
+            <p>If you need further assistance, feel free to contact our support team.</p>
+            <p>Best regards,</p>
+            <p>Thuso Customer Relations Team</p>
+            `
+        )
+    }
+
+    genetePinChangeEmailText(heading: string) {
+        return `
+            ${heading}
+            Dear User,\n\n
+            We noticed that you attempted to register your number with Thuso, but the process was unsuccessful due to a two-factor authentication PIN issue. This may be caused by WhatsApp Cloud API requiring the previously set PIN, even after the number is deleted from Thuso.\n\n
+            To resolve this, you have two options:\n
+            1. Manually delete the number from your WhatsApp Business Account through the Facebook Business Manager console.\n
+            2. Update your PIN in WhatsApp Manager to match the one generated in Thuso.\n\n
+            How to Update Your PIN in WhatsApp Manager:\n
+            1. Go to https://business.facebook.com/ and log into your account.\n
+            2. Select the business managing your WhatsApp Business Account (WABA).\n
+            3. Click on "WhatsApp Accounts" and find the WABA linked to your number.\n
+            4. Click on the WABA to open the info panel.\n
+            5. Under "Settings", click "WhatsApp Manager".\n
+            6. Locate your phone number and go to "Settings".\n
+            7. Click on "Two-step verification".\n
+            8. Select "Change PIN" and enter a new PIN.\n
+            9. Confirm the new PIN to complete the update.\n\n
+            Once you have updated your PIN, please try registering your number with Thuso again.\n\n
+            If you need further assistance, feel free to contact our support team.\n\n
+            Best regards,\n\n
+            Thuso Support Team
+            `
     }
 }

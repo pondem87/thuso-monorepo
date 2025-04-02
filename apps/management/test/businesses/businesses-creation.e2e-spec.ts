@@ -88,8 +88,8 @@ describe('Business Creations (e2e)', () => {
             if (args[0] === `${configService.get<string>("FACEBOOK_GRAPH_API")}/oauth/access_token?client_id=${configService.get<string>("META_APP_ID")}&client_secret=${configService.get<string>("META_APP_SECRET")}&code=${businessData.exchangeToken}`) {
                 return Promise.resolve({
                     ok: true,
-                    text: () => Promise.resolve(businessToken),
-                    json: () => Promise.resolve({ error: businessToken })
+                    text: () => Promise.resolve(null),
+                    json: () => Promise.resolve({ access_token: businessToken, token_type: "bearer" })
                 })
             } else if (args[0] === `${configService.get<string>("FACEBOOK_GRAPH_API")}/${businessData.wabaId}/subscribed_apps`) {
                 if (args[1].method === "POST" && args[1].headers.Authorization === `Bearer ${businessToken}`) {
@@ -121,7 +121,7 @@ describe('Business Creations (e2e)', () => {
             }
         })
 
-        await businessesService.createWhatsAppBusiness(account1.id, businessData)
+        await businessesService.createWhatsAppBusiness(user1, account1.id, businessData)
 
         const business = await businessRepository.findOne({ where: { wabaId: businessData.wabaId }})
 
