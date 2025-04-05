@@ -17,16 +17,16 @@ export class MessageProcessorAccountData {
     @Column("varchar")
     wabaToken: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true})
     businessName: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     tagline: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     serviceDescription: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     about: string
 
     @Column("timestamp", { nullable: true })

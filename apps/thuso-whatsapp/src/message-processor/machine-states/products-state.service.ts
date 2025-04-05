@@ -137,7 +137,7 @@ export class ProductsStateService {
     async fetchProducts(context: ISMContext, mode: "next" | "prev" | "first"): Promise<[Product[], number] | null> {
         try {
             const businessProfileIdResponse = await fetch(
-                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${context.wabaId}/businesses/profile`,
+                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/businesses/${context.wabaId}/profile`,
                 {
                     method: 'GET',
                     headers: {
@@ -195,7 +195,7 @@ export class ProductsStateService {
     async fetchProduct(context: ISMContext, productId: string) {
         try {
             const businessProfileIdResponse = await fetch(
-                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${context.wabaId}/businesses/profile`,
+                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/businesses/${context.wabaId}/profile`,
                 {
                     method: 'GET',
                     headers: {

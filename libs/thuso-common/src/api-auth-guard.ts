@@ -30,6 +30,8 @@ export class ApiAuthGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
+
+        this.logger.debug("Extracted token from header", { token });
         
         if (!token) {
             throw new UnauthorizedException();
@@ -38,6 +40,8 @@ export class ApiAuthGuard implements CanActivate {
         if (token !== this.apiToken) {
             throw new UnauthorizedException();
         }
+
+        this.logger.debug("Token is valid", { token });
 
         return true;
     }

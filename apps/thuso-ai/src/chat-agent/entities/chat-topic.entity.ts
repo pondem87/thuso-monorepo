@@ -1,12 +1,15 @@
-import { Entity, ManyToOne, PrimaryColumn } from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { ChatHistory } from "./chat-history.entity";
 
 @Entity()
 export class ChatTopic {
-    @PrimaryColumn("date")
+    @PrimaryGeneratedColumn("increment")
+    id: number
+
+    @Column("date")
     date: string
 
-    @PrimaryColumn("varchar")
+    @Column("varchar")
     label: string
 
     @ManyToOne(() => ChatHistory, (chatHistory) => chatHistory.topics)

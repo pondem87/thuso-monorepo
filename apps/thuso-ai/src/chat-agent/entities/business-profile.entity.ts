@@ -8,25 +8,25 @@ export class BusinessProfile {
     @Column("uuid")
     accountId: string
 
-    @Column("uuid")
+    @Column("uuid", { nullable: true })
     profileId: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     name: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     tagline: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     serviceDescription: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     about: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     imageLogoId: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     imageBannerId: string
 
     @UpdateDateColumn()

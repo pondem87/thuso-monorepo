@@ -30,35 +30,34 @@ export class BusinessProfileService {
 
         if (!businessProfile) {
             // Create a new business profile
-            const profileData = await this.fetchProfileData(wabaId)
-            if (!profileData) return null
+            const businessData = await this.fetchProfileData(wabaId)
+            if (!businessData) return null
 
             businessProfile = await this.businessProfileRepo.save(
                 this.businessProfileRepo.create({
-                    accountId: profileData.accountId,
-                    profileId: profileData.id,
-                    name: profileData.businessProfile.name,
-                    tagline: profileData.businessProfile.tagline,
-                    serviceDescription: profileData.businessProfile.serviceDescription,
-                    about: profileData.businessProfile.about,
-                    imageLogoId: profileData.businessProfile.imageLogoId,
-                    imageBannerId: profileData.businessProfile.imageBannerId
+                    wabaId: businessData.wabaId,
+                    accountId: businessData.accountId,
+                    profileId: businessData.businessProfile?.id,
+                    name: businessData.businessProfile?.name,
+                    tagline: businessData.businessProfile?.tagline,
+                    serviceDescription: businessData.businessProfile?.serviceDescription,
+                    about: businessData.businessProfile?.about,
+                    imageLogoId: businessData.businessProfile?.imageLogoId,
+                    imageBannerId: businessData.businessProfile?.imageBannerId
                 })
             )
-        }
-
-        if (!isDateLessThanHoursOld(businessProfile.updatedAt, parseInt(this.configService.get<string>("AI_BUSINESS_DATA_DURATION_HOURS")) || 2)) {
+        } else if (!isDateLessThanHoursOld(businessProfile.updatedAt, parseInt(this.configService.get<string>("AI_BUSINESS_DATA_DURATION_HOURS")) || 2) || !businessProfile.profileId) {
             // Update the business profile
-            const profileData = await this.fetchProfileData(wabaId)
-            if (!profileData) return null
+            const businessData = await this.fetchProfileData(wabaId)
+            if (!businessData) return null
 
-            businessProfile.profileId = profileData.id,
-            businessProfile.name = profileData.businessProfile.name,
-            businessProfile.tagline = profileData.businessProfile.tagline,
-            businessProfile.serviceDescription = profileData.businessProfile.serviceDescription,
-            businessProfile.about = profileData.businessProfile.about,
-            businessProfile.imageLogoId = profileData.businessProfile.imageLogoId,
-            businessProfile.imageBannerId = profileData.businessProfile.imageBannerId
+            businessProfile.profileId = businessData.businessProfile?.id,
+            businessProfile.name = businessData.businessProfile?.name,
+            businessProfile.tagline = businessData.businessProfile?.tagline,
+            businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription,
+            businessProfile.about = businessData.businessProfile?.about,
+            businessProfile.imageLogoId = businessData.businessProfile?.imageLogoId,
+            businessProfile.imageBannerId = businessData.businessProfile?.imageBannerId
 
             businessProfile = await this.businessProfileRepo.save(businessProfile)
         }
@@ -69,7 +68,7 @@ export class BusinessProfileService {
     async fetchProfileData(wabaId: string): Promise<BusinessInfoType> {
         try {
             const busApiResult = await fetch(
-                `${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/businesses/${wabaId}`,
+                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/businesses/${wabaId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`
@@ -109,7 +108,7 @@ type BusinessInfoType = {
     wabaToken: string
     subscribed: boolean
     disabled: boolean
-    businessProfile: BusinessProfileType
+    businessProfile?: BusinessProfileType
     createdAt: Date
 }
 

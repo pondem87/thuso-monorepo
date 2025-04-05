@@ -41,7 +41,7 @@ export class LLMProcessStateMachineProvider {
 
         const businessProfile = await this.businessProfileService.getBusinessProfileByWabaId(input.context.wabaId)
 
-        if (!businessProfile) {
+        if (!businessProfile || !businessProfile.profileId) {
             // send message to user
             const message: MessengerRMQMessage = {
                 wabaId: input.context.wabaId,
@@ -58,8 +58,10 @@ export class LLMProcessStateMachineProvider {
         }
 
         const sysMsgTxt =
-            `You are a helpful customer service agent for a business named "${businessProfile.name}." Refer to provided information to assist the customer. If information not available, please refer to provided business contacts.`
+            `You are a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
             + `\n\nCompany Information: ${businessProfile.serviceDescription}\nTagline: ${businessProfile.tagline}\nAbout: ${businessProfile.about}\n\n`
+            + `Always refer to business documents for more detailed information using the document search tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS!`
+            + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.`
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(
             "gpt-4o-mini",

@@ -34,4 +34,11 @@ export class BusinessesApiController {
     ) {
         return this.businessesApiService.getBusinessInfoByWabaId(wabaId)
     }
+
+    @Get(":wabaId/profile")
+    getBusinessProfileByWabaId (
+        @Param('wabaId') wabaId: string
+    ) {
+        return this.businessesApiService.getBusinessProfileByWabaId(wabaId)
+    }
 }

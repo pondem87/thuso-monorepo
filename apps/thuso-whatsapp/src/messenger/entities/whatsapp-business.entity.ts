@@ -12,10 +12,10 @@ export class MessengerWhatsAppBusiness {
     @Column("varchar")
     wabaToken: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     profileName: string
 
-    @Column("varchar")
+    @Column("varchar", { nullable: true })
     tagLine: string
 
     @UpdateDateColumn()

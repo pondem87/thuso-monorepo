@@ -36,6 +36,6 @@ export class ProductsApiController {
         @Param('profileId') profileId: string,
         @Param('productId') id: string,
     ) {
-        return this.productsApiService.getProduct(profileId, id)
+        return this.productsApiService.getProductForView(profileId, id)
     }
 }

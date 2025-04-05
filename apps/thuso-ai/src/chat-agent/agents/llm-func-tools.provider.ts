@@ -1,5 +1,5 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { z } from "zod"
 import { EmbeddingMetadata } from "../../embedding/vector-store.provider";
@@ -36,7 +36,8 @@ export class LLMFuncToolsProvider {
                 return `Action: "${input.action}" will be implemented by downstream application.`
             },
             name: "take-action",
-            description: "When human requests action in this list: [send main menu]",
+            description:`When human requests action in this list:\n
+                         1. send main menu => to view options for products, services and promotions`,
             schema: z.object({
                 action: z.string().describe("action requested")
             })

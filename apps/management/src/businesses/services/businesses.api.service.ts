@@ -12,7 +12,8 @@ export class BusinessesApiService {
     constructor(
         private readonly loggingService: LoggingService,
         @InjectRepository(WhatsAppBusiness)
-        private readonly businessRepository: Repository<WhatsAppBusiness>
+        private readonly businessRepository: Repository<WhatsAppBusiness>,
+        
     ) {
         this.logger = this.loggingService.getLogger({
             module: "businesses",
@@ -50,5 +51,24 @@ export class BusinessesApiService {
             this.logger.error("Error while getting business information by wabaid", { wabaId,  error })
             throw new HttpException("Failed to get business info", HttpStatus.INTERNAL_SERVER_ERROR)
         }
+    }
+
+    async getBusinessProfileByWabaId(wabaId: string) {
+        return await this.businessRepository.findOne({
+            where: { 
+                wabaId
+            },
+            relations: {
+                businessProfile: true,
+            }
+        }).then((business) => {
+            if (!business || !business.businessProfile) {
+                throw new HttpException("Business or Profile not found", HttpStatus.NOT_FOUND)
+            }
+            return business.businessProfile
+        }).catch((error) => {
+            this.logger.error("Error while getting business profile by wabaid", { wabaId,  error })
+            throw new HttpException("Failed to get business profile", HttpStatus.INTERNAL_SERVER_ERROR)
+        })
     }
 }

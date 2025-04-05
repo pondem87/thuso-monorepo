@@ -54,10 +54,10 @@ export class AccountDataService {
                         accountId: businessInfo.accountId,
                         wabaId: businessInfo.wabaId,
                         wabaToken: businessInfo.wabaToken,
-                        businessName: businessInfo.businessProfile.name,
-                        tagline: businessInfo.businessProfile.tagline,
-                        serviceDescription: businessInfo.businessProfile.serviceDescription,
-                        about: businessInfo.businessProfile.about,
+                        businessName: businessInfo.businessProfile?.name,
+                        tagline: businessInfo.businessProfile?.tagline,
+                        serviceDescription: businessInfo.businessProfile?.serviceDescription,
+                        about: businessInfo.businessProfile?.about,
                         disabled: false
                     })
                 )
@@ -82,9 +82,7 @@ export class AccountDataService {
                 }
 
                 accountData = await this.accountDataRepo.save(accountData)
-            }
-
-            if (!isDateLessThanHoursOld(accountData.updatedAt, parseInt(this.configService.get<string>("MESSAGE_PROCESSOR_ACCOUNT_DATA_DURATION_HOURS")) || 6)) {
+            } else if (!isDateLessThanHoursOld(accountData.updatedAt, parseInt(this.configService.get<string>("MESSAGE_PROCESSOR_ACCOUNT_DATA_DURATION_HOURS")) || 6) || !accountData.businessName ) {
                 // if account-data stale, refresh
                 // get business data
                 const busApiResult = await fetch(
@@ -104,10 +102,10 @@ export class AccountDataService {
                     accountData.accountId = businessInfo.accountId
                     accountData.wabaId = businessInfo.wabaId
                     accountData.wabaToken = businessInfo.wabaToken
-                    accountData.businessName = businessInfo.businessProfile.name 
-                    accountData.tagline = businessInfo.businessProfile.tagline
-                    accountData.serviceDescription = businessInfo.businessProfile.serviceDescription
-                    accountData.about = businessInfo.businessProfile.about
+                    accountData.businessName = businessInfo.businessProfile?.name 
+                    accountData.tagline = businessInfo.businessProfile?.tagline
+                    accountData.serviceDescription = businessInfo.businessProfile?.serviceDescription
+                    accountData.about = businessInfo.businessProfile?.about
                     accountData.disabled = businessInfo.disabled
                 }
 
@@ -168,6 +166,6 @@ type BusinessInfo = {
     wabaToken: string
     subscribed: boolean
     disabled: boolean
-    businessProfile: BusinessProfile
+    businessProfile?: BusinessProfile
     createdAt: Date
 }

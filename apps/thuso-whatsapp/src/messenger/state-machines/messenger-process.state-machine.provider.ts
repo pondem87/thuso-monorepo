@@ -214,7 +214,7 @@ export class MessengerProcessStateMachineProvider {
                 const listMsgBody: InteractiveListMessageBody[] = []
 
                 switch (context.payload.menuId) {
-                    case "send-main-menu":
+                    case "main-menu":
                         listMsgBody.push({
                             messaging_product: "whatsapp",
                             recipient_type: "individual",
@@ -224,7 +224,7 @@ export class MessengerProcessStateMachineProvider {
                                 "Main Menu",
                                 "View services, products, promotions and more...",
                                 MainMenuItems,
-                                context.whatsAppBusiness.tagLine
+                                `${context.whatsAppBusiness.profileName}: ${context.whatsAppBusiness.tagLine}`
                             )
                         })
                         
@@ -234,7 +234,7 @@ export class MessengerProcessStateMachineProvider {
 
             default:
                 this.logger.error("Failed to prepare message: Unhandled case", context)
-                return null
+                return []
         }
     }
 

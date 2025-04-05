@@ -42,19 +42,19 @@ export class WhatsAppBusinessService {
                 this.whatsAppBusinessRepo.create({
                     wabaId: busInfo.wabaId,
                     wabaToken: busInfo.wabaToken,
-                    profileName: busInfo.businessProfile.name,
-                    tagLine: busInfo.businessProfile.tagline,
+                    profileName: busInfo.businessProfile?.name,
+                    tagLine: busInfo.businessProfile?.tagline,
                     account 
                 })
             )
-        }
-
-        if (!isDateLessThanHoursOld(business.updatedAt, parseInt(this.configService.get<string>("MESSENGER_BUSINESS_DATA_DURATION_HOURS")) || 2)) {
+        } else if (!isDateLessThanHoursOld(business.updatedAt, parseInt(this.configService.get<string>("MESSENGER_BUSINESS_DATA_DURATION_HOURS")) || 2) || !business.profileName) {
             const busInfo = await this.fetchBusinessData(wabaId)
             if (!busInfo) return null
 
             business.wabaId = busInfo.wabaId
             business.wabaToken = busInfo.wabaToken
+            business.profileName = busInfo.businessProfile?.name,
+            business.tagLine = busInfo.businessProfile?.tagline,
 
             business = await this.whatsAppBusinessRepo.save(business)
         }

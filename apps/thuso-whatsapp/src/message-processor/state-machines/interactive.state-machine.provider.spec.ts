@@ -235,7 +235,7 @@ describe('MessageProcessorService', () => {
             async (input: RequestInfo) => {
                 if (typeof input === 'string') {
                     console.log(`FETCH URL = ${input}`)
-                    if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/${wabaId}/businesses/profile`) {
+                    if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/businesses/${wabaId}/profile`) {
                         return {
                             ok: true,
                             json: () => Promise.resolve(businessProfile),
@@ -367,7 +367,7 @@ describe('MessageProcessorService', () => {
             async (input: RequestInfo) => {
                 if (typeof input === 'string') {
                     console.log(`FETCH URL = ${input}`)
-                    if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/${wabaId}/businesses/profile`) {
+                    if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/businesses/${wabaId}/profile`) {
                         return {
                             ok: true,
                             json: () => Promise.resolve(businessProfile),
