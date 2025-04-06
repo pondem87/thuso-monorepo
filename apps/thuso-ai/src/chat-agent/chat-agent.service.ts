@@ -13,7 +13,10 @@ export class ChatAgentService {
         private readonly loggingService: LoggingService,
         private readonly llmProcessStateMachineProvider: LLMProcessStateMachineProvider
     ) {
-
+        this.logger = this.loggingService.getLogger({
+            module: "chat-agent",
+            file: "chat-agent.service"
+        })
     }
 
     async processMessage(payload: LLMQueueMessage) {

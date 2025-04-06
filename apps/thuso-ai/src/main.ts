@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ThusoAiModule } from './thuso-ai.module';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { LangGraphAgentProvider } from './chat-agent/agents/langgraph-agent.provider';
 
 async function bootstrap() {
 	const app = await NestFactory.create(ThusoAiModule);
@@ -18,8 +19,10 @@ async function bootstrap() {
 		}
 	})
 
-	await app.startAllMicroservices()
+	const langGraphAgentProvider = app.get<LangGraphAgentProvider>(LangGraphAgentProvider)
+	await langGraphAgentProvider.setUpCheckPointer()
 
+	await app.startAllMicroservices()
 	const port = parseInt(configService.get<string>("THUSO_AI_PORT")) || 3000
 	await app.listen(port);
 }

@@ -26,8 +26,6 @@ describe('LangGraphAgentProvider', () => {
         }).compile();
 
         provider = module.get<LangGraphAgentProvider>(LangGraphAgentProvider);
-
-        await provider.setUpCheckPointer()
     }, LONG_TEST_TIMEOUT);
 
     it('should be defined', () => {

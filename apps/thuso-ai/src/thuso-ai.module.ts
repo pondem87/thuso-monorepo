@@ -6,8 +6,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatAgentModule } from './chat-agent/chat-agent.module';
 import * as fs from "fs"
-import { LoggingModule } from '@lib/logging';
-import { ThusoCommonModule } from '@lib/thuso-common';
 
 @Module({
   imports: [

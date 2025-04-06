@@ -61,7 +61,7 @@ export class LLMProcessStateMachineProvider {
             `You are a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
             + `\n\nCompany Information: ${businessProfile.serviceDescription}\nTagline: ${businessProfile.tagline}\nAbout: ${businessProfile.about}\n\n`
             + `Always refer to business documents for more detailed information using the document search tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS!`
-            + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.`
+            + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.`;
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(
             "gpt-4o-mini",
