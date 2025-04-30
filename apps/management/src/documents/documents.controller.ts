@@ -7,7 +7,7 @@ import { LoggingService } from '@lib/logging';
 import { DocumentsService } from './documents.service';
 import { PermissionAction } from '../accounts/types';
 import { CreateDocumentDto } from './dto/create-document.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { EditDocumentDto } from './dto/edit-document.dto';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('management/:account/documents')
@@ -29,14 +29,12 @@ export class DocumentsController {
     @PermissionsDecorator([
         { entity: "document", action: PermissionAction.CREATE }
     ])
-    @UseInterceptors(FileInterceptor('document'))
     @Post()
     createDocument(
         @Param('account') accountId: string,
-        @UploadedFile() file: Express.Multer.File,
         @Body() data: CreateDocumentDto
     ) {
-        return this.documentsService.createDocument(accountId, data, file)
+        return this.documentsService.createDocument(accountId, data)
     }
 
     @PermissionsDecorator([
@@ -74,17 +72,26 @@ export class DocumentsController {
     }
 
     @PermissionsDecorator([
+        { entity: "document", action: PermissionAction.READ }
+    ])
+    @Get(":documentId/link")
+    getDocumentLink(
+        @Param('account') accountId: string,
+        @Param('documentId') id: string,
+    ) {
+        return this.documentsService.getDownloadLink(accountId, id)
+    }
+
+    @PermissionsDecorator([
         { entity: "document", action: PermissionAction.UPDATE }
     ])
-    @UseInterceptors(FileInterceptor('document'))
     @Patch(":documentId")
     editDocument(
         @Param('account') accountId: string,
         @Param('documentId') id: string,
-        @UploadedFile() file: Express.Multer.File,
-        @Body() data: CreateDocumentDto
+        @Body() data: EditDocumentDto
     ) {
-        return this.documentsService.editDocument(accountId, id, data, file)
+        return this.documentsService.editDocument(accountId, id, data)
     }
 
     @PermissionsDecorator([

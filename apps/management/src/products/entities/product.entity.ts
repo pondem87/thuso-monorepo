@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { ProductMedia } from "./product-media.entity";
 
 @Entity("product")
 export class Product {
@@ -23,11 +24,8 @@ export class Product {
     @Column("varchar")
     price: string
 
-    @Column("varchar")
-    mimetype: string
-
-    @Column("varchar")
-    s3key: string
+    @OneToMany(() => ProductMedia, (media) => media.product)
+    media: ProductMedia[]
 
     @Column("int", { default: 0 })
     views: number

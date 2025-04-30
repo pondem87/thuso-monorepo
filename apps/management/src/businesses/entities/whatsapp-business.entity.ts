@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { WhatsAppNumber } from "./whatsapp-number";
+import { WhatsAppNumber } from "./whatsapp-number.entity";
 import { BusinessProfile } from "./business-profile.entity";
 
 @Entity("whatsapp_business")

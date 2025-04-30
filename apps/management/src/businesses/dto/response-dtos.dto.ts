@@ -1,6 +1,6 @@
 import { BusinessProfile } from "../entities/business-profile.entity"
 import { WhatsAppBusiness } from "../entities/whatsapp-business.entity"
-import { WhatsAppNumber } from "../entities/whatsapp-number"
+import { WhatsAppNumber } from "../entities/whatsapp-number.entity"
 
 export class WhatsAppBusinessDto {
     id: string

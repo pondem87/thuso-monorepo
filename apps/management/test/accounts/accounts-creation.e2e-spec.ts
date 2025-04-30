@@ -5,10 +5,11 @@ import { CreateAccountAndRootUserDto } from '../../src/accounts/dto/create-accou
 import { Repository } from 'typeorm';
 import { User } from '../../src/accounts/entities/user.entity';
 import { Account } from '../../src/accounts/entities/account.entity';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt'
-import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, SendEmailEventPattern } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, UserUpdateAccountsPattern } from '@lib/thuso-common';
 import { AccountsController } from '../../src/accounts/controllers/accounts.controller';
+import AppDataSource from '../../src/db/datasource'
 
 describe('Accounts Creation (e2e)', () => {
     let app: INestApplication;
@@ -23,7 +24,17 @@ describe('Accounts Creation (e2e)', () => {
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ManagementModule],
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ManagementModule
+            ],
         })
             .overrideProvider(MgntRmqClient).useValue(mgntQClient)
             .compile();
@@ -74,9 +85,18 @@ describe('Accounts Creation (e2e)', () => {
 
         expect(mgntQClient.emit).toHaveBeenCalledTimes(1)
         expect(mgntQClient.emit).toHaveBeenCalledWith(
-            SendEmailEventPattern,
-            expect.objectContaining({
-                email: data.email
-            }))
+            UserUpdateAccountsPattern,
+            {
+                event: "NEW",
+                userData: {
+                    createdAt: user.createdAt,
+                    email: user.email,
+                    forenames: user.forenames,
+                    surname: user.surname,
+                    verificationCode: user.verificationCode,
+                    verified: user.verified,
+                    id: user.id
+                }
+            })
     }, LONG_TEST_TIMEOUT);
 });

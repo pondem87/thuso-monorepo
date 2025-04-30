@@ -17,10 +17,13 @@ import { LLMFuncToolsProvider } from './agents/llm-func-tools.provider';
 import { ChatMessageHistoryProvider } from './chat-message-history/chat-message-history-provider';
 import { ChatMessageHistoryService } from './chat-message-history/chat-message-history.service';
 import { BusinessProfileService } from './services/business-profile.service';
+import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { ChatAgentApiController } from './chat-agent.api.controller';
+import { ChatMessageHistoryApiService } from './chat-message-history/chat-message-history.api.service';
 
 @Module({
-  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, ChatTopic, ChatMessage])],
-  controllers: [ChatAgentController],
+  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, ChatTopic, ChatMessage]), ThusoClientProxiesModule],
+  controllers: [ChatAgentController, ChatAgentApiController],
   providers: [
     ChatAgentService,
     LLMProcessStateMachineProvider,
@@ -29,22 +32,8 @@ import { BusinessProfileService } from './services/business-profile.service';
     ChatMessageHistoryProvider,
     ChatMessageHistoryService,
     BusinessProfileService,
-    {
-      provide: WhatsappRmqClient,
-      useFactory: (configService: ConfigService) => {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
-            queue: configService.get<string>("WHATSAPP_RMQ_QUEUENAME"),
-            queueOptions: {
-              durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true"
-            },
-          },
-        })
-      },
-      inject: [ConfigService]
-    }
+    ThusoClientProxiesService,
+    ChatMessageHistoryApiService
   ],
   exports: [TypeOrmModule]
 })

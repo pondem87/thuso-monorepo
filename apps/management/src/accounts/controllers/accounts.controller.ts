@@ -16,6 +16,7 @@ import { PermissionAction } from '../types';
 import { AccountsService } from '../services/accounts.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
+import { OnboardingDto } from '../dto/onboarding.dto';
 
 @Controller('management/accounts')
 export class AccountsController {
@@ -146,5 +147,18 @@ export class AccountsController {
         @Param('account') accountId: string
     ) {
         return this.accountsService.findOneAccountById(accountId)
+    }
+
+    @UseGuards(AuthGuard, PermissionsGuard)
+    @PermissionsDecorator([
+        { entity: "account", action: PermissionAction.READ }
+    ])
+    @Post(':account/onboarding')
+    progressOnboarding(
+        @Body() dto: OnboardingDto,
+        @Request() request
+    ) {
+        const { user }: { user: User } = request
+        return this.accountsService.progressOnboarding(user, dto)
     }
 }

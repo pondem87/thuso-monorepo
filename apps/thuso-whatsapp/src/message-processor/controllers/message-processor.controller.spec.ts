@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MessageProcessorController } from './message-processor.controller';
 import { MessageProcessorService } from '../services/message-processor.service';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
+import { AccountDataService } from '../services/account-data.service';
 
 describe('MessageProcessorController', () => {
   let controller: MessageProcessorController;
@@ -19,6 +20,10 @@ describe('MessageProcessorController', () => {
         {
           provide: LoggingService,
           useValue: mockedLoggingService
+        },
+        {
+          provide: AccountDataService,
+          useValue: {}
         }
       ]
     }).compile();

@@ -45,7 +45,7 @@ export class PostgresVectorStore {
                 port: this.config.get<number>("DB_PORT"),
                 user: this.config.get<string>("DB_USERNAME"),
                 password: this.config.get<string>("DB_PASSWORD"),
-                database: this.config.get<string>("EMBEDDINGS_DB_NAME"),
+                database: `${this.config.get<string>("DB_DATABASE")}-ai`,
                 ssl: {
                     ca: fs.readFileSync(this.config.get<string>("DB_CERT_PATH"))
                 }

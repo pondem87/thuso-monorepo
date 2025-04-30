@@ -1,14 +1,55 @@
 export const LONG_TEST_TIMEOUT = 60_000_000
 
+// whatsapp message processing
 export const MessageProcessorEventPattern = 'message-processor'
 export const ContactlessMessageProcessorEventPattern = 'contactless-message-processor'
+
+// sending whatsapp messages
 export const MessengerEventPattern = 'messenger'
+
+// llm
 export const LLMEventPattern = 'llm'
+export const RegisterCustomerToCRMEventPattern = 'llm-register-customer'
+export const CustomerRegistrationChatAgentEventPattern = 'customer-registered-chat-agent'
+export const NewTopicLLMEventPattern = 'new-llm-conversation-topic'
+
+// sending emails
 export const SendEmailEventPattern = 'send-email'
 
+// submitting templates
+export const TemplateUpdatePattern = 'template-update'
+
+// account creation, change and delete handlers
+export const AccountUpdateAccountsPattern = 'account-update-accounts'
+export const AccountUpdateMessengerPattern = 'account-update-messenger'
+export const AccountUpdateMessageProcessorPattern = 'account-update-message-processor'
+export const AccountUpdateChatAgentPattern = 'account-update-chat-agent'
+
+// account creation, change and delete handlers
+export const UserUpdateAccountsPattern = 'user-update-accounts'
+
+// busines creation, update and delete handlers
+export const BusinessUpdateMessengerPattern = 'business-update-messenger'
+export const BusinessUpdateMessageProcessorPattern = 'business-update-message-processor'
+export const BusinessUpdateChatAgentPattern = 'business-update-chat-agent'
+
+// business profile creation, update and delete handlers
+export const BusinessProfileUpdateMessengerPattern = 'business-profile-updat-messenger'
+export const BusinessProfileUpdateMessageProcessorPattern = 'business-profile-update-message-processor'
+export const BusinessProfileUpdateChatAgentPattern = 'business-profile-update-chat-agent'
+
+// crm
+export const NewCustomerBusinessEventPattern = "new-customer-to-business"
+
+// template
+export const TemplateUpdateEventPattern = "template-update-notification"
+export const TemplateQualityEventPattern = "template-quality-notification"
+
+// rmq client names
 export const WhatsappRmqClient = 'whatsapp_rmq_client'
 export const LlmRmqClient = 'llm_rmq_client'
 export const MgntRmqClient = 'mgnt_rmq_client'
+export const SubscriptionRmqClient = 'subs_rmq_client'
 
 export const WHATSAPP_DOCS_MIMETYPES = [
     "text/plain",
@@ -22,6 +63,7 @@ export const WHATSAPP_DOCS_MIMETYPES = [
 ]
 export const WHATSAPP_IMAGES_MIMETYPES = ["image/jpeg", "image/png"]
 export const WHATSAPP_MIMETYPES = WHATSAPP_DOCS_MIMETYPES.concat(WHATSAPP_IMAGES_MIMETYPES)
+export const WHATSAPP_RESUMABLE_MIMETYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "video/mp4"]
 export const IMAGE_MIMETYPES = WHATSAPP_IMAGES_MIMETYPES
 export const VECTOR_DOCS_MIMETYPES = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -72,3 +114,10 @@ export const sentimentLabels: { label: string; description: string }[] = [
       description: "An issue that has not been addressed or resolved satisfactorily."
     }
   ];
+
+  export enum OnboardingState {
+    CreateWaba = "create-whatsapp-business",
+    CreateBusProf = "create-business-profile",
+    ReadNextSteps = "read-next-steps",
+    OnboardComplete = "onboarding-complete"
+}

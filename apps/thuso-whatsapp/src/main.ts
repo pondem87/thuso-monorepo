@@ -12,6 +12,7 @@ async function bootstrap() {
 		options: {
 			urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
 			queue: configService.get<string>("WHATSAPP_RMQ_QUEUENAME"),
+			prefetchCount: parseInt(configService.get<string>("RABBITMQ_PREFETCH_COUNT")) || 5,
 			queueOptions: {
 				durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true" ? true : false
 			}

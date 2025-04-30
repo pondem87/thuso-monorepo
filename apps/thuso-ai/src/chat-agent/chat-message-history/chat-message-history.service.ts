@@ -2,12 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { StoredMessage } from "@langchain/core/messages";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ChatHistory } from "../entities/chat-history.entity";
-import { In, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { Logger } from "winston";
 import { ChatMessage } from "../entities/chat-message.entity";
 import { LoggingService } from "@lib/logging";
 import { ChatTopic } from "../entities/chat-topic.entity";
-import { getDateOnly } from "@lib/thuso-common";
+import { CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPattern, NewTopicLLMEventPayload } from "@lib/thuso-common";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 
 @Injectable()
@@ -21,7 +22,8 @@ export class ChatMessageHistoryService {
 		private readonly chatMessageRepository: Repository<ChatMessage>,
 		@InjectRepository(ChatTopic)
 		private readonly chatTopicRepository: Repository<ChatTopic>,
-		private readonly loggingService: LoggingService
+		private readonly loggingService: LoggingService,
+		private readonly clientService: ThusoClientProxiesService
 	) {
 		this.logger = this.loggingService.getLogger({
 			module: "llm-tools",
@@ -37,13 +39,13 @@ export class ChatMessageHistoryService {
 				}
 			})
 		} catch (error) {
-			this.logger.error("Error retrieving chathistory from database.", {error})
+			this.logger.error("Error retrieving chathistory from database.", { error })
 			return null
 		}
 	}
 
 	async createChatMessage(chatHistory: ChatHistory, message: StoredMessage): Promise<ChatMessage | null> {
-        try {
+		try {
 			const chatMessage = new ChatMessage()
 			chatMessage.chatHistory = chatHistory
 			chatMessage.message = message
@@ -52,35 +54,35 @@ export class ChatMessageHistoryService {
 			this.logger.error("")
 			return null
 		}
-    }
+	}
 
 	async getChatMessages(chatHistory: ChatHistory, chatHistoryWindowLength: number): Promise<ChatMessage[]> {
-        try {
+		try {
 			return await this.chatMessageRepository.find({
 				where: {
 					chatHistory: {
-						id: chatHistory.id
+						userId: chatHistory.userId, phoneNumberId: chatHistory.phoneNumberId
 					}
 				},
 				take: chatHistoryWindowLength
 			})
 		} catch (error) {
-			this.logger.error("Error retrieving messages", {error})
+			this.logger.error("Error retrieving messages", { error })
 			return []
 		}
-    }
-	
-    async saveChatHistory(chatHistory: ChatHistory): Promise<ChatHistory|null> {
-        try {
+	}
+
+	async saveChatHistory(chatHistory: ChatHistory): Promise<ChatHistory | null> {
+		try {
 			return await this.chatHistoryRepository.save(chatHistory)
 		} catch (error) {
-			this.logger.error("Error saving chatHistory", {error})
+			this.logger.error("Error saving chatHistory", { error })
 			return null
 		}
-    }
+	}
 
 	async addTopic(chatHistory: ChatHistory, label: string): Promise<void> {
-        try {
+		try {
 			const date = getDateOnly(new Date())
 			const topic = await this.chatTopicRepository.findOneBy({ date, label, chatHistory })
 			if (!topic) {
@@ -92,9 +94,53 @@ export class ChatMessageHistoryService {
 						chatHistory
 					})
 				)
+				// update chathistory
+				await this.chatHistoryRepository.update({ userId: chatHistory.userId, phoneNumberId: chatHistory.phoneNumberId }, { lastTopic: label })
+				// message crm of new topic
+				if (chatHistory.crmId) {
+					this.clientService.emitMgntQueue(
+						NewTopicLLMEventPattern,
+						{
+							crmId: chatHistory.crmId,
+							topicLabel: label
+						} as NewTopicLLMEventPayload
+					)
+				}
 			}
 		} catch (error) {
-			this.logger.error("Error saving topic", { wabaId: chatHistory.wabaId })
+			this.logger.error("Error saving topic", { wabaId: chatHistory.wabaId, error })
 		}
-    }
+	}
+
+	async processRegistration(data: CustomerRegistrationChatAgentEventPayload) {
+		try {
+			if (!data.phone_number_id) {
+				await this.chatHistoryRepository.update({ userId: data.whatsAppNumber, wabaId: data.wabaId }, { crmId: data.crmId })
+				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
+				for (const chat of chats) {
+					chat.crmId = data.crmId
+					await this.chatHistoryRepository.save(chat)
+
+					this.clientService.emitMgntQueue(
+						NewTopicLLMEventPattern,
+						{
+							crmId: chat.crmId,
+							topicLabel: chat.lastTopic
+						} as NewTopicLLMEventPayload
+					)
+				}
+			} else {
+				for (const phone_number_id of data.phone_number_id) {
+					const chatHistory = new ChatHistory()
+					chatHistory.wabaId = data.wabaId
+					chatHistory.userId = data.whatsAppNumber
+					chatHistory.crmId = data.crmId
+					chatHistory.phoneNumberId = phone_number_id
+					await this.chatHistoryRepository.save(chatHistory)
+				}
+			}
+		} catch (error) {
+			this.logger.error("Error while processing user registration message", { error })
+		}
+	}
 }

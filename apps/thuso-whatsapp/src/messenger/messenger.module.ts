@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MessengerAccount } from './entities/account.entity';
 import { Conversation } from './entities/conversation.entity';
 import { DailyMetrics } from './entities/daily-metrics.entity';
-import { RunningMetrics } from './entities/running-metrics';
+import { RunningMetrics } from './entities/running-metrics.entity';
 import { SentMessage } from './entities/sent-message.entity';
 import { MessengerWhatsAppBusiness } from './entities/whatsapp-business.entity';
 import { ConfigModule } from '@nestjs/config';

@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ManagementModule } from '../../src/management.module';
-import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT } from '@lib/thuso-common';
 import { Account } from '../../src/accounts/entities/account.entity';
 import { User } from '../../src/accounts/entities/user.entity';
 import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { CreateAccountAndRootUserDto } from '../../src/accounts/dto/create-account-and-root-user.dto';
 import * as bcrypt from 'bcrypt'
 import { UserToken } from '../../src/auth/entities/user-token.entity';
@@ -13,6 +13,7 @@ import { JwtPayload } from '../../src/auth/types';
 import { JwtService } from '@nestjs/jwt';
 import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
+import AppDataSource from '../../src/db/datasource';
 
 describe('ManagementController (e2e)', () => {
     let app: INestApplication;
@@ -27,7 +28,16 @@ describe('ManagementController (e2e)', () => {
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ManagementModule],
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ManagementModule],
         })
         .compile();
 

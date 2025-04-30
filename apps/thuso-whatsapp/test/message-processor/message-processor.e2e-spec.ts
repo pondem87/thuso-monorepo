@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { Repository } from "typeorm";
-import { getRepositoryToken } from "@nestjs/typeorm";
+import { getRepositoryToken, TypeOrmModule } from "@nestjs/typeorm";
 import { MessageProcessorController } from "../../src/message-processor/controllers/message-processor.controller";
 import { PersistedInteractiveState } from "../../src/message-processor/entities/persisted-interactive-state.entity";
 import { ThusoWhatsappModule } from "../../src/thuso-whatsapp.module";
@@ -10,6 +10,7 @@ import { Contact, LLMEventPattern, LLMQueueMessage, LlmRmqClient, LONG_TEST_TIME
 import { ConfigService } from "@nestjs/config";
 import { v4 as uuidv4 } from "uuid";
 import { MessageProcessorAccountData } from "../../src/message-processor/entities/account-data.entity";
+import AppDataSource from '../../src/db/datasource'
 
 describe('MessageProcessor/MessageProcessorController (e2e)', () => {
     let app: INestApplication;
@@ -23,7 +24,16 @@ describe('MessageProcessor/MessageProcessorController (e2e)', () => {
 
     beforeEach(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ThusoWhatsappModule]
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ThusoWhatsappModule]
         }).compile();
 
         app = moduleFixture.createNestApplication();

@@ -11,7 +11,7 @@ import * as mammoth from "mammoth";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { Document } from "@langchain/core/documents";
 import { TextLoader } from "langchain/document_loaders/fs/text";
-import { Blob } from 'node:buffer';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class EmbeddingService {
@@ -46,14 +46,12 @@ export class EmbeddingService {
 
     async embedDocument(dto: CreateEmbeddingDto): Promise<{ success: boolean}> {
         try {
-            const { Body } = await this.s3Client.send(
-                new GetObjectCommand({
-                    Bucket: this.s3BucketName,
-                    Key: dto.s3key
-                })
-            )
+            const url = await getSignedUrl(this.s3Client, new GetObjectCommand({
+                Bucket: this.s3BucketName,
+                Key: dto.s3key
+            }), { expiresIn: 300 })
 
-            const fileBlob = new Blob([(await Body.transformToByteArray()).buffer])
+            const blob = await (await fetch(url)).blob()
 
             let documents: Document[]
         
@@ -64,7 +62,7 @@ export class EmbeddingService {
 
             switch (dto.mimetype) {
                 case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                    const arrayBuffer = await fileBlob.arrayBuffer();
+                    const arrayBuffer = await blob.arrayBuffer();
                     documents = await splitter.splitDocuments([
                         new Document({
                           pageContent: (await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) })).value,
@@ -74,11 +72,11 @@ export class EmbeddingService {
                     break;
     
                 case "application/pdf":
-                    documents = await splitter.splitDocuments(await new PDFLoader(fileBlob).load())
+                    documents = await splitter.splitDocuments(await new PDFLoader(blob).load())
                     break;
     
                 case "text/plain":
-                    documents = await splitter.splitDocuments(await new TextLoader(fileBlob).load())
+                    documents = await splitter.splitDocuments(await new TextLoader(blob).load())
                     break;
             
                 default:

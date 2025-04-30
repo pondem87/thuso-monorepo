@@ -6,13 +6,13 @@ import { Repository } from "typeorm";
 import { User } from "../../src/accounts/entities/user.entity";
 import { Account } from "../../src/accounts/entities/account.entity";
 import { WhatsAppBusiness } from "../../src/businesses/entities/whatsapp-business.entity";
-import { WhatsAppNumber } from "../../src/businesses/entities/whatsapp-number";
-import { getRepositoryToken } from "@nestjs/typeorm";
+import { WhatsAppNumber } from "../../src/businesses/entities/whatsapp-number.entity";
+import { getRepositoryToken, TypeOrmModule } from "@nestjs/typeorm";
 import * as bcrypt from 'bcrypt'
 import { CreateBusinessDto } from "../../src/businesses/dto/create-business.dto"
 import { ConfigService } from "@nestjs/config";
 import { BusinessesService } from "../../src/businesses/services/businesses.service";
-
+import AppDataSource from '../../src/db/datasource';
 
 describe('Business Creations (e2e)', () => {
     let app: INestApplication;
@@ -28,7 +28,17 @@ describe('Business Creations (e2e)', () => {
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ManagementModule],
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ManagementModule
+            ],
         }).compile();
 
         app = moduleFixture.createNestApplication();

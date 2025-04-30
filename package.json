@@ -12,6 +12,9 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/thuso-monorepo/main",
+    "typeorm:gen:mngnt": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:generate -d apps/management/src/db/datasource.ts",
+    "typeorm:gen:whatsapp": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:generate -d apps/thuso-whatsapp/src/db/datasource.ts",
+    "typeorm:gen:ai": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli migration:generate -d apps/thuso-ai/src/db/datasource.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -25,6 +28,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.749.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@langchain/community": "^0.3.31",
     "@langchain/core": "^0.3.40",
     "@langchain/langgraph": "^0.2.55",
@@ -37,11 +41,13 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/microservices": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
+    "@nestjs/swagger": "^8.1.1",
     "@nestjs/testing": "^10.4.15",
     "@nestjs/typeorm": "^11.0.0",
     "@types/bcrypt": "^5.0.2",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.5",
+    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -67,7 +73,7 @@
     "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.ts$": "ts-jest"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
@@ -80,7 +86,8 @@
     ],
     "moduleNameMapper": {
       "^@lib/thuso-common(|/.*)$": "<rootDir>/libs/thuso-common/src/$1",
-      "^@lib/logging(|/.*)$": "<rootDir>/libs/logging/src/$1"
+      "^@lib/logging(|/.*)$": "<rootDir>/libs/logging/src/$1",
+      "^@lib/thuso-client-proxies(|/.*)$": "<rootDir>/libs/thuso-client-proxies/src/$1"
     }
   },
   "devDependencies": {

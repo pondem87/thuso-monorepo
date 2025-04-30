@@ -1,15 +1,15 @@
 import { assign, createActor, fromPromise, setup } from "xstate";
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { LangGraphAgentProvider } from "../agents/langgraph-agent.provider";
 import { ChatMessageHistoryProvider } from "../chat-message-history/chat-message-history-provider";
 import { HumanMessage } from "@langchain/core/messages";
-import { ClientProxy } from "@nestjs/microservices";
 import { Contact, MessengerEventPattern, MessengerRMQMessage, Metadata, StateMachineActor, WhatsappRmqClient } from "@lib/thuso-common";
 import { LoggingService } from "@lib/logging";
 import { LLMFuncToolsProvider } from "../agents/llm-func-tools.provider";
 import { LLMCallbackHandler } from "../utility/llm-callback-handler";
 import { BusinessProfileService } from "../services/business-profile.service";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 @Injectable()
 export class LLMProcessStateMachineProvider {
@@ -20,8 +20,7 @@ export class LLMProcessStateMachineProvider {
         private readonly langGraphAgentProvider: LangGraphAgentProvider,
         private readonly llmFuncToolsProvider: LLMFuncToolsProvider,
         private readonly chatMessageHistoryProvider: ChatMessageHistoryProvider,
-        @Inject(WhatsappRmqClient)
-        private readonly whatsappRMQClient: ClientProxy,
+        private readonly clientsService: ThusoClientProxiesService,
         private readonly businessProfileService: BusinessProfileService
     ) {
         this.logger = this.loggingService.getLogger({
@@ -52,7 +51,7 @@ export class LLMProcessStateMachineProvider {
                 conversationType: "service"
             }
 
-            this.whatsappRMQClient.emit(MessengerEventPattern, message)
+            this.clientsService.emitWhatsappQueue(MessengerEventPattern, message)
 
             return { handler }
         }
@@ -61,13 +60,13 @@ export class LLMProcessStateMachineProvider {
             `You are a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
             + `\n\nCompany Information: ${businessProfile.serviceDescription}\nTagline: ${businessProfile.tagline}\nAbout: ${businessProfile.about}\n\n`
             + `Always refer to business documents for more detailed information using the document search tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS!`
-            + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.`;
+            + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.\n\n`;
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(
             "gpt-4o-mini",
             sysMsgTxt,
             handler,
-            this.llmFuncToolsProvider.getTools(input.context.contact, businessProfile.profileId)
+            this.llmFuncToolsProvider.getTools(input.context.contact, businessProfile.accountId, businessProfile.profileId)
         )
 
         const chatMessageHistory = await this.chatMessageHistoryProvider.getChatMessageHistory({
@@ -75,6 +74,11 @@ export class LLMProcessStateMachineProvider {
             userId: input.context.contact.wa_id,
             phoneNumberId: input.context.metadata.phone_number_id
         })
+
+        // if user not in crm alter the prompt
+        if (!chatMessageHistory.getChatHistory().crmId) {
+            sysMsgTxt + `This is a new custor. You should ask for information including "forenames, surname, street address, city, country, age, gender, email" and pass it to the save-customer-data tool for the purposes of improving customer service`
+        }
 
         const finalState = await compiledGraph.invoke({
             messages: [new HumanMessage(input.context.prompt)]
@@ -84,6 +88,8 @@ export class LLMProcessStateMachineProvider {
             new HumanMessage(input.context.prompt),
             finalState.messages[finalState.messages.length - 1]
         ])
+
+        await chatMessageHistory.setLastMessageTime()
 
         const output = finalState.output.object
 
@@ -122,7 +128,7 @@ export class LLMProcessStateMachineProvider {
         }
 
         // send message to user
-        if (message) this.whatsappRMQClient.emit(MessengerEventPattern, message)
+        if (message) this.clientsService.emitWhatsappQueue(MessengerEventPattern, message)
 
         return { handler }
     }

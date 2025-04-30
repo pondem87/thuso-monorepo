@@ -3,6 +3,7 @@ import { WhatsappService } from './whatsapp.service';
 import { WhatsappRmqClient } from '@lib/thuso-common';
 import { ConfigService } from '@nestjs/config';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 describe('WhatsappService', () => {
   let service: WhatsappService;
@@ -24,6 +25,10 @@ describe('WhatsappService', () => {
         {
           provide: LoggingService,
           useValue: mockedLoggingService
+        },
+        {
+          provide: ThusoClientProxiesService,
+          useValue: {}
         }
       ],
     }).compile();

@@ -19,11 +19,13 @@ export class BusinessesApiService {
             module: "businesses",
             file: "businesses.api.service"
         })
+
+        this.logger.info("Initialise Business Api Service")
     }
 
     async getBusinessInfoByPhoneNumberId(phoneNumberId: string) {
         try {
-            return await this.businessRepository.findOne({
+            return await this.businessRepository.findOneOrFail({
                 where: { 
                     appNumbers: { appNumberId: phoneNumberId }
                 },

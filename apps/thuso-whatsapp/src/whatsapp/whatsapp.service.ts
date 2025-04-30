@@ -1,8 +1,8 @@
 import { LoggingService } from '@lib/logging';
-import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, WhatsappRmqClient, WhatsAppWebhookPayloadDto } from '@lib/thuso-common';
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, TemplateQualityEventPattern, TemplateQualityEventPayload, TemplateStatusUpdate, TemplateUpdateEventPattern, TemplateUpdateEventPayload, WhatsAppWebhookPayload } from '@lib/thuso-common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ClientProxy } from '@nestjs/microservices';
 import { Logger } from 'winston';
 
 @Injectable()
@@ -11,8 +11,7 @@ export class WhatsappService {
     private verifyToken: string
 
     constructor (
-        @Inject(WhatsappRmqClient)
-        private readonly rmqClient: ClientProxy,
+        private readonly clientService: ThusoClientProxiesService,
         private readonly loggingService: LoggingService,
         private readonly configService: ConfigService
     ) {
@@ -26,7 +25,7 @@ export class WhatsappService {
         this.verifyToken = this.configService.get<string>("WEBHOOK_VERIFY_TOKEN")
     }
 
-    processWhatsappHookPayload(payload: WhatsAppWebhookPayloadDto) {
+    processWhatsappHookPayload(payload: WhatsAppWebhookPayload) {
         this.logger.debug("processing WebhookPayloadDto")
 
         if (!(payload?.object && payload.object == "whatsapp_business_account")) {
@@ -37,7 +36,6 @@ export class WhatsappService {
         try {
             payload.entry.forEach(entry => {
 
-
                 const wabaId = entry.id
 
                 entry.changes.forEach(change => {
@@ -46,7 +44,7 @@ export class WhatsappService {
                         if (change.value.messages) {
                             if (change.value.contacts) {
                                 change.value.messages.forEach((message, index) => {
-                                    this.rmqClient.emit(MessageProcessorEventPattern, {
+                                    this.clientService.emitWhatsappQueue(MessageProcessorEventPattern, {
                                         wabaId,
                                         contact: change.value.contacts[index],
                                         metadata: change.value.metadata,
@@ -55,7 +53,7 @@ export class WhatsappService {
                                 })
                             } else {
                                 change.value.messages.forEach((message) => {
-                                    this.rmqClient.emit(ContactlessMessageProcessorEventPattern, {
+                                    this.clientService.emitWhatsappQueue(ContactlessMessageProcessorEventPattern, {
                                         wabaId,
                                         metadata: change.value.metadata,
                                         message
@@ -75,6 +73,22 @@ export class WhatsappService {
                                 this.logger.warn("Unhandled webhook error notification", { data: error })
                             })
                         }
+                    } else if (change.field === "message_template_status_update") {
+                        this.clientService.emitMgntQueue(
+                            TemplateUpdateEventPattern,
+                            {
+                                wabaId,
+                                update: change.value   
+                            } as TemplateUpdateEventPayload
+                        )
+                    }  else if (change.field === "message_template_quality_update") {
+                        this.clientService.emitMgntQueue(
+                            TemplateQualityEventPattern,
+                            {
+                                wabaId,
+                                update: change.value   
+                            } as TemplateQualityEventPayload
+                        )
                     } else {
                         this.logger.warn("Unhandled webhook change", { data: change })
                     }

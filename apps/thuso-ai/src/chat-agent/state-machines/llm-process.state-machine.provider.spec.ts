@@ -8,8 +8,9 @@ import { ConfigService } from "@nestjs/config";
 import { LLMCallbackHandler } from "../utility/llm-callback-handler";
 import { LoggingService, mockedLoggingService } from "@lib/logging";
 import { LLMFuncToolsProvider } from "../agents/llm-func-tools.provider";
-import { MessengerEventPattern, WhatsappRmqClient } from "@lib/thuso-common";
+import { MessengerEventPattern } from "@lib/thuso-common";
 import { BusinessProfileService } from "../services/business-profile.service";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 describe('LLMProcessStateMachineProvider', () => {
 	let provider: LLMProcessStateMachineProvider;
@@ -64,9 +65,15 @@ describe('LLMProcessStateMachineProvider', () => {
 	}
 
 	const mockChatMessageHistory = {
+		getChatHistory: jest.fn().mockResolvedValue({
+			wabaId: "config.wabaId",
+            userId: "config.userId",
+			phoneNumberId: "config.phoneNumberId"
+		}),
 		getMessages: jest.fn().mockResolvedValue([]),
 		addMessages: jest.fn(),
-		addTopic: jest.fn()
+		addTopic: jest.fn(),
+		setLastMessageTime: jest.fn().mockResolvedValue(undefined)
 	}
 
 	const mockChatMessageHistoryProvider = {
@@ -74,7 +81,7 @@ describe('LLMProcessStateMachineProvider', () => {
 	}
 
 	const mockWhatsappRmqClient = {
-		emit: jest.fn()
+		emitWhatsappQueue: jest.fn()
 	}
 
 	const mockConfigService = {
@@ -82,8 +89,7 @@ describe('LLMProcessStateMachineProvider', () => {
 	}
 
 	afterEach(() => {
-		mockWhatsappRmqClient.emit.mockClear()
-		mockWhatsappRmqClient.emit.mockClear()
+		mockWhatsappRmqClient.emitWhatsappQueue.mockClear()
 		mockInvokeGraph.mockClear()
 	})
 
@@ -108,7 +114,7 @@ describe('LLMProcessStateMachineProvider', () => {
 					useValue: mockChatMessageHistoryProvider
 				},
 				{
-					provide: WhatsappRmqClient,
+					provide: ThusoClientProxiesService,
 					useValue: mockWhatsappRmqClient
 				},
 				{
@@ -168,11 +174,11 @@ describe('LLMProcessStateMachineProvider', () => {
 
 		expect(llmProcessActor.getSnapshot().matches("Complete")).toBe(true)
 		expect(mockInvokeGraph).toHaveBeenCalledTimes(1)
-		expect(mockWhatsappRmqClient.emit).toHaveBeenCalledTimes(1)
+		expect(mockWhatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 		expect(mockChatMessageHistory.addTopic).toHaveBeenCalledWith("Information Seeking")
 
 		delete input.prompt
-		expect(mockWhatsappRmqClient.emit).toHaveBeenCalledWith(
+		expect(mockWhatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
 			MessengerEventPattern,
 			{
 				...input,
@@ -212,10 +218,10 @@ describe('LLMProcessStateMachineProvider', () => {
 
 		expect(llmProcessActor.getSnapshot().matches("Complete")).toBe(true)
 		expect(mockInvokeGraph).toHaveBeenCalledTimes(0)
-		expect(mockWhatsappRmqClient.emit).toHaveBeenCalledTimes(1)
+		expect(mockWhatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 
 		delete input.prompt
-		expect(mockWhatsappRmqClient.emit).toHaveBeenCalledWith(
+		expect(mockWhatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
 			MessengerEventPattern,
 			{
 				...input,

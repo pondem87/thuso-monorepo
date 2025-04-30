@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, ParseIntPipe, Post, Query } from '@nes
 import { Logger } from 'winston';
 import { WhatsappService } from './whatsapp.service';
 import { LoggingService } from '@lib/logging';
-import { WhatsAppWebhookPayloadDto } from '@lib/thuso-common';
+import { WhatsAppWebhookPayload } from '@lib/thuso-common';
 
 @Controller('whatsapp/webhook')
 export class WhatsappController {
@@ -25,7 +25,7 @@ export class WhatsappController {
     @HttpCode(200)
     @Post()
     receiveWhatsappHook(
-        @Body() payload: WhatsAppWebhookPayloadDto
+        @Body() payload: WhatsAppWebhookPayload
     ) {
         this.logger.debug(
             "Received webhook notification payload",

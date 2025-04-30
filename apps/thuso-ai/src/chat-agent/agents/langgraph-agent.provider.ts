@@ -71,7 +71,7 @@ export class LangGraphAgentProvider {
         this.maxMessages = this.minMessages * 2
 
         this.connString = `postgresql://${encodeURIComponent(configService.get<string>("DB_USERNAME"))}:${encodeURIComponent(configService.get<string>("DB_PASSWORD"))}@${configService.get<string>("DB_HOST")}`
-            + `:${configService.get<string>("DB_PORT")}/${configService.get<string>("DB_DATABASE")}`
+            + `:${configService.get<string>("DB_PORT")}/${configService.get<string>("DB_DATABASE")}-ai`
             + `?sslmode=verify-full&sslrootcert=${configService.get<string>("DB_CERT_PATH")}`
 
         this.checkPointer = PostgresSaver.fromConnString(this.connString);

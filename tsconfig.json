@@ -29,6 +29,12 @@
       ],
       "@lib/logging/*": [
         "libs/logging/src/*"
+      ],
+      "@lib/thuso-client-proxies": [
+        "libs/thuso-client-proxies/src"
+      ],
+      "@lib/thuso-client-proxies/*": [
+        "libs/thuso-client-proxies/src/*"
       ]
     }
   }

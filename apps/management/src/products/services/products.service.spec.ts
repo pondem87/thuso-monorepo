@@ -4,6 +4,7 @@ import { LoggingService, mockedLoggingService } from '@lib/logging';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Product } from '../entities/product.entity';
+import { ProductMedia } from '../entities/product-media.entity';
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -18,6 +19,10 @@ describe('ProductsService', () => {
                 },
                 {
                   provide: getRepositoryToken(Product),
+                  useValue: {}
+                },
+                {
+                  provide: getRepositoryToken(ProductMedia),
                   useValue: {}
                 },
                 {

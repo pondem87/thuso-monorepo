@@ -6,13 +6,14 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { LONG_TEST_TIMEOUT, MessengerRMQMessage, Metadata } from "@lib/thuso-common";
 import { MessengerController } from "../../src/messenger/controllers/messenger.controller";
 import { MessengerAccount } from "../../src/messenger/entities/account.entity";
-import { getRepositoryToken } from "@nestjs/typeorm";
+import { getRepositoryToken, TypeOrmModule } from "@nestjs/typeorm";
 import { v4 as uuidv4 } from "uuid"
 import { Conversation } from "../../src/messenger/entities/conversation.entity";
 import { DailyMetrics } from "../../src/messenger/entities/daily-metrics.entity";
-import { RunningMetrics } from "../../src/messenger/entities/running-metrics";
+import { RunningMetrics } from "../../src/messenger/entities/running-metrics.entity";
 import { SentMessage } from "../../src/messenger/entities/sent-message.entity";
 import { MessengerWhatsAppBusiness } from "../../src/messenger/entities/whatsapp-business.entity";
+import AppDataSource from '../../src/db/datasource'
 
 describe('Messenger/MessengerController (e2e)', () => {
     let app: INestApplication;
@@ -28,7 +29,17 @@ describe('Messenger/MessengerController (e2e)', () => {
 
     beforeEach(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ThusoWhatsappModule]
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ThusoWhatsappModule
+            ]
         })
         .compile();
 

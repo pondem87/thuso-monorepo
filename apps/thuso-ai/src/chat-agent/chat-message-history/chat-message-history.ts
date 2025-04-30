@@ -76,8 +76,17 @@ export class ChatMessageHistory extends BaseListChatMessageHistory {
         return this.chatMessageHistoryService.addTopic(this.chatHistory, label)
     }
 
+    async setLastMessageTime(): Promise<void> {
+        this.chatHistory.lastMessageTime = new Date()
+        await this.chatMessageHistoryService.saveChatHistory(this.chatHistory)
+    }
+
     async clear(): Promise<void> {
         this.logger.warn("Unimplemented method called.")
+    }
+
+    getChatHistory(): ChatHistory {
+        return this.chatHistory
     }
 
 }

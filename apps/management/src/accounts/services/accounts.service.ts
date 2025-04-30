@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
 import * as bcrypt from 'bcrypt';
-import { emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
+import { AccountDataUpdatePayload, AccountUpdateChatAgentPattern, AccountUpdateMessageProcessorPattern, AccountUpdateMessengerPattern, emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage, UserDataUpdatePayload, UserUpdateAccountsPattern } from '@lib/thuso-common';
 import { CreateAccountAndRootUserDto } from '../dto/create-account-and-root-user.dto';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -16,6 +16,8 @@ import { User } from '../entities/user.entity';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
 import { ClientProxy } from '@nestjs/microservices';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { OnboardingDto } from '../dto/onboarding.dto';
 
 @Injectable()
 export class AccountsService {
@@ -29,8 +31,7 @@ export class AccountsService {
         @InjectRepository(Invitation)
         private readonly invitationRepository: Repository<Invitation>,
         private readonly loggingService: LoggingService,
-        @Inject(MgntRmqClient)
-        private readonly mgntRmqClient: ClientProxy
+        private readonly clientsService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "accounts",
@@ -122,19 +123,45 @@ export class AccountsService {
                 })
             )
 
-            const emailHtml = this.generateWelcomeEmailHtml(randomString)
+            const newUserData = {
+                id: user.id,
+                email: user.email,
+                forenames: user.forenames,
+                surname: user.surname,
+                verified: user.verified,
+                verificationCode: user.verificationCode,
+                createdAt: user.createdAt
+            }
 
-            const emailText = this.generateWelcomeEmailText(randomString)
+            const newAccountData = {
+                id: account.id,
+                name: account.name,
+                maxAllowedBusinesses: account.maxAllowedBusinesses,
+                maxAllowedDailyConversations: account.maxAllowedDailyConversations,
+                subscriptionEndDate: account.subscriptionEndDate,
+                disabled: account.disabled,
+                createdAt: account.createdAt,
+                root: newUserData
+            }
 
-            this.mgntRmqClient.emit(
-                SendEmailEventPattern,
-                {
-                    email: user.email,
-                    subject: "Account Verification",
-                    text: emailText,
-                    html: emailHtml
-                } as SendEmailQueueMessage
-            )
+            const userUpdateData: UserDataUpdatePayload = {
+                userData: newUserData,
+                event: "NEW"
+            }
+
+            const accountUpdateData: AccountDataUpdatePayload = {
+                accountData: newAccountData,
+                event: "NEW"
+            }
+
+            // inform services of new account
+            
+            this.clientsService.emitWhatsappQueue(AccountUpdateMessengerPattern, accountUpdateData)
+            this.clientsService.emitWhatsappQueue(AccountUpdateMessageProcessorPattern, accountUpdateData)
+            this.clientsService.emitLlmQueue(AccountUpdateChatAgentPattern, accountUpdateData)
+
+            // inform services of new user
+            this.clientsService.emitMgntQueue(UserUpdateAccountsPattern, userUpdateData)
 
             return {
                 email: user.email,
@@ -157,15 +184,22 @@ export class AccountsService {
 
         try {
             const newUser = await this.userRepository.save(user)
-            this.mgntRmqClient.emit(
-                SendEmailEventPattern,
-                {
-                    email: user.email,
-                    subject: "Thuso: Next Steps",
-                    text: this.genarateNextStepsEmailText(`${user.forenames} ${user.surname}`),
-                    html: this.generateNextStepsEmailHtml(`${user.forenames} ${user.surname}`)
-                } as SendEmailQueueMessage
-            )
+            
+            const newUserData = {
+                id: newUser.id,
+                email: newUser.email,
+                forenames: newUser.forenames,
+                surname: newUser.surname,
+                verified: newUser.verified,
+                verificationCode: newUser.verificationCode,
+                createdAt: newUser.createdAt
+            }
+            
+            this.clientsService.emitMgntQueue(UserUpdateAccountsPattern, {
+                userData: newUserData,
+                event: "VERIFIED"
+            } as UserDataUpdatePayload)
+
             return new UserDto(newUser)
         } catch (error) {
             this.logger.error("Failed to save user after verification", { email: user.email, error: JSON.stringify(error) })
@@ -193,7 +227,7 @@ export class AccountsService {
         const emailText =
             `Reset Thuso Password\n\nUse this code to confirm password reset: ${randomString}`
 
-        this.mgntRmqClient.emit(
+        this.clientsService.emitMgntQueue(
             SendEmailEventPattern,
             {
                 email: user.email,
@@ -247,7 +281,7 @@ export class AccountsService {
                 `Welcome to Thuso.\n\nYou have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso`
                 + `Use this link to set up your account: ${inviteLink}`
 
-            this.mgntRmqClient.emit(
+            this.clientsService.emitMgntQueue(
                 SendEmailEventPattern,
                 {
                     email,
@@ -311,19 +345,21 @@ export class AccountsService {
                 })
             )
 
-            const emailHtml = this.generateWelcomeEmailHtml(verificationCode)
-
-            const emailText = this.generateWelcomeEmailText(verificationCode)
-
-            this.mgntRmqClient.emit(
-                SendEmailEventPattern,
-                {
-                    email: user.email,
-                    subject: "Account Verification",
-                    text: emailText,
-                    html: emailHtml
-                } as SendEmailQueueMessage
-            )
+            // new user
+            const newUserData = {
+                id: user.id,
+                email: user.email,
+                forenames: user.forenames,
+                surname: user.surname,
+                verified: user.verified,
+                verificationCode: user.verificationCode,
+                createdAt: user.createdAt
+            }
+            
+            this.clientsService.emitMgntQueue(UserUpdateAccountsPattern, {
+                userData: newUserData,
+                event: "NEW-GUEST"
+            } as UserDataUpdatePayload)
 
             // delete invitation
             await this.invitationRepository.delete({ id: invitationId })
@@ -335,6 +371,9 @@ export class AccountsService {
         }
     }
 
+    /*
+    * When an existing user is invited to another account and accepts invitation
+    */
     async acceptInvitation(invitationId: string): Promise<{ message: string }> {
         try {
             // get invitation
@@ -376,7 +415,7 @@ export class AccountsService {
             await this.userRepository.save(user)
             return { success: true }
         } catch (error) {
-            this.logger.error("", { error })
+            this.logger.error("Error while changing password", { error })
             throw new HttpException("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
@@ -391,77 +430,13 @@ export class AccountsService {
         return new UserDto(await this.userRepository.save(user))
     }
 
-    generateWelcomeEmailHtml(verificationCode: string) {
-        return emailHtmlTemplate(
-            `Welcome to Thuso`,
-            `
-                <p>Use this code to verify your account: <strong>${verificationCode}</strong></p>
-                <p>We hope you will make the most of your Thuso account. We are continuously adding more exciting features to make you get the best value.</p>
-            `
-        )
+    async progressOnboarding(user: User, dto: OnboardingDto) {
+        try {
+            user.onboardingState = dto.next
+            return new UserDto(await this.userRepository.save(user))
+        } catch (error) {
+            this.logger.error("Error while updating onboarding state", { error })
+            throw new HttpException("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
-
-    generateWelcomeEmailText(verificationCode: string) {
-        return `Welcome to Thuso.\n\nUse this code to verify your account: ${verificationCode}`
-    }
-
-    generateNextStepsEmailHtml(name: string) {
-        return emailHtmlTemplate(
-            `Next Steps`,
-            `
-            <h2>Dear ${name},</h2>
-            <p>Congratulations! Your Thuso account has been successfully verified. You are now just a few steps away from setting up your WhatsApp chatbot.</p>
-
-            <h3>What’s Next?</h3>
-            <ol>
-                <li><strong>Create Your WhatsApp Business Account</strong><br>
-                    - Click <a href="https://manage.thuso.pfitztronic.co.bw">here</a> to log in to Thuso and start your setup.<br>
-                    - You will need a Facebook account and a phone number that is not currently in use on WhatsApp.
-                </li>
-                <li><strong>Link Your WhatsApp Number</strong><br>
-                    - Follow the guided steps to connect your WhatsApp number.<br>
-                    - This number will be used by your chatbot to interact with customers.
-                </li>
-                <li><strong>Set Up Your Business Profile</strong><br>
-                    - Fill in key business details to help Thuso provide accurate responses.<br>
-                    - Upload FAQs, business documents, and customer service guides.
-                </li>
-                <li><strong>Upload Your Product Catalogue</strong><br>
-                    - Showcase your products by adding descriptions, images, and PDFs.<br>
-                    - Your customers will be able to browse and interact with your listings.
-                </li>
-            </ol>
-
-            <h3>Need Help?</h3>
-            <p>If you have any questions or need support, visit our <a href="https://thuso.pfitztronic.co.bw">website</a> or reply to this email.</p>
-
-            <p>We’re excited to have you on board!</p>
-            <p><strong>Best regards,</strong><br>The Thuso Team</p>
-            `
-        )
-    }
-
-    genarateNextStepsEmailText(name: string) {
-        return `
-        Dear ${name},\n\n
-        Congratulations! Your Thuso account has been successfully verified. You are now just a few steps away from setting up your WhatsApp chatbot.\n\n
-        What’s Next?\n
-        1. Create Your WhatsApp Business Account\n
-        - Click here to log in to Thuso and start your setup.\n
-        - You will need a Facebook account and a phone number that is not currently in use on WhatsApp.\n
-        2. Link Your WhatsApp Number\n
-        - Follow the guided steps to connect your WhatsApp number.\n
-        - This number will be used by your chatbot to interact with customers.\n
-        3. Set Up Your Business Profile\n- Fill in key business details to help Thuso provide accurate responses.\n
-        - Upload FAQs, business documents, and customer service guides.\n
-        4. Upload Your Product Catalogue\n
-        - Showcase your products by adding descriptions, images, and PDFs.\n
-        - Your customers will be able to browse and interact with your listings.\n\n
-        Need Help?\n
-        If you have any questions or need support, visit our website or reply to this email.\n\n
-        We’re excited to have you on board!\n
-        Best regards,\n
-        The Thuso Team`
-    }
-
 }

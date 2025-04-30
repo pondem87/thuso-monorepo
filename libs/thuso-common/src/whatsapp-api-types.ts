@@ -1,6 +1,4 @@
-import { Type } from "class-transformer";
-import { ValidateNested, IsOptional, IsString, IsEnum, IsBoolean, IsNumber, IsInt } from "class-validator";
-
+import { z } from "zod"
 
 /*
  *  DTOS FOR PARSING WHATSAPP WEBHOOK PAYLOAD
@@ -9,523 +7,275 @@ import { ValidateNested, IsOptional, IsString, IsEnum, IsBoolean, IsNumber, IsIn
 
 // MESSAGES DTO ////////////////////////////////////////////////////////////////////////////////
 
-export class Audio {
-    @IsString()
-    id: string;
-
-    @IsString()
-    mime_type: string;
-}
-
-export class Button {
-    @IsString()
-    payload: string;
-
-    @IsString()
-    text: string;
-}
-
-class ReferredProduct {
-    @IsString()
-    catalog_id: string;
-
-    @IsString()
-    product_retailer_id: string;
-}
-
-export class Context {
-    @IsOptional()
-    @IsBoolean()
-    forwarded?: boolean;
-
-    @IsOptional()
-    @IsBoolean()
-    frequently_forwarded?: boolean;
-
-    @IsOptional()
-    @IsString()
-    from?: string;
-
-    @IsOptional()
-    @IsString()
-    id?: string;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => ReferredProduct)
-    referred_product?: ReferredProduct;
-}
-
-export class Document {
-    @IsOptional()
-    @IsString()
-    caption?: string;
-
-    @IsString()
-    filename: string;
-
-    @IsString()
-    sha256: string;
-
-    @IsString()
-    mime_type: string;
-
-    @IsString()
-    id: string;
-}
-
-export class Identity {
-    @IsBoolean()
-    acknowledged: boolean;
-
-    @IsString()
-    created_timestamp: string;
-
-    @IsString()
-    hash: string;
-}
-
-export class Image {
-    @IsOptional()
-    @IsString()
-    caption?: string;
-
-    @IsString()
-    sha256: string;
-
-    @IsString()
-    id: string;
-
-    @IsString()
-    mime_type: string;
-}
-
-class ButtonReply {
-    @IsString()
-    id: string;
-
-    @IsString()
-    title: string;
-}
-
-class ListReply {
-    @IsString()
-    id: string;
-
-    @IsString()
-    title: string;
-
-    @IsOptional()
-    @IsString()
-    description?: string;
-}
-
-export class Interactive {
-    @IsEnum(['list_reply', 'button_reply'])
-    type: "list_reply" | "button_reply";
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => ButtonReply)
-    button_reply?: ButtonReply;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => ListReply)
-    list_reply?: ListReply;
-}
-
-export class Location {
-    @IsOptional()
-    @IsString()
-    address?: string
-    @IsNumber()
-    latitude: number
-    @IsNumber()
-    longitude: number
-    @IsOptional()
-    @IsString()
-    name?: string
-}
-
-export class Order {
-    @IsString()
-    catalog_id: string;
-
-    @IsString()
-    text: string;
-
-    @ValidateNested({ each: true })
-    @Type(() => ProductItem)
-    product_items: ProductItem[];
-}
-
-class ProductItem {
-    @IsString()
-    product_retailer_id: string;
-
-    @IsString()
-    quantity: string;
-
-    @IsString()
-    item_price: string;
-
-    @IsString()
-    currency: string;
-}
-
-export class Referral {
-    @IsString()
-    source_url: string;
-
-    @IsString()
-    source_type: string;
-
-    @IsString()
-    source_id: string;
-
-    @IsString()
-    headline: string;
-
-    @IsString()
-    body: string;
-
-    @IsString()
-    media_type: string;
-
-    @IsOptional()
-    @IsString()
-    image_url?: string;
-
-    @IsOptional()
-    @IsString()
-    video_url?: string;
-
-    @IsOptional()
-    @IsString()
-    thumbnail_url?: string;
-
-    @IsString()
-    ctwa_clid: string;
-}
-
-export class Sticker {
-    @IsString()
-    mime_type: string;
-
-    @IsString()
-    sha256: string;
-
-    @IsString()
-    id: string;
-
-    @IsBoolean()
-    animated: boolean;
-}
-
-export class System {
-    @IsString()
-    body: string;
-
-    @IsString()
-    identity?: string;
-
-    @IsOptional()
-    @IsString()
-    new_wa_id?: string;
-
-    @IsOptional()
-    @IsString()
-    wa_id?: string;
-
-    @IsEnum(['user_changed_number', 'user_identity_changed'])
-    type: 'user_changed_number' | 'user_identity_changed';
-
-    @IsOptional()
-    @IsString()
-    customer?: string;
-}
-
-export class Text {
-    @IsString()
-    body: string;
-}
-
-export class Video {
-    @IsOptional()
-    @IsString()
-    caption?: string;
-
-    @IsString()
-    filename: string;
-
-    @IsString()
-    sha256: string;
-
-    @IsString()
-    id: string;
-
-    @IsString()
-    mime_type: string;
-}
-
-export class Messages {
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Audio)
-    audio?: Audio;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Button)
-    button?: Button;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Context)
-    context?: Context;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Document)
-    document?: Document;
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Error)
-    errors?: Error[];
-
-    @IsOptional()
-    @IsString()
-    from?: string;
-
-    @IsOptional()
-    @IsString()
-    id?: string;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Identity)
-    identity?: Identity;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Image)
-    image?: Image;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Interactive)
-    interactive?: Interactive;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Location)
-    location?: Location
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Order)
-    order?: Order;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Referral)
-    referral?: Referral;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Sticker)
-    sticker?: Sticker;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => System)
-    system?: System;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Text)
-    text?: Text;
-
-    @IsOptional()
-    @IsString()
-    timestamp?: string;
-
-    @IsOptional()
-    @IsEnum(['audio', 'button', 'document', 'text', 'image', 'interactive', 'location', 'order', 'sticker', 'system', 'unknown', 'video'])
-    type?: 'audio' | 'button' | 'document' | 'text' | 'image' | 'interactive' | 'location' | 'order' | 'sticker' | 'system' | 'unknown' | 'video'
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Video)
-    video?: Video;
-}
-
-// CONTACT DTO //////////////////////////////////////////////////////////////////////////////////////
-
-class Profile {
-    @IsString()
-    name: string;
-}
-
-export class Contact {
-    @IsString()
-    wa_id: string;
-
-    @ValidateNested()
-    @Type(() => Profile)
-    profile: Profile;
-}
-
-// WEBHOOK OBJECT //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class ErrorData {
-    @IsString()
-    details: string;
-}
-
-export class Error {
-    @IsInt()
-    code: number;
-
-    @IsString()
-    title: string;
-
-    @IsString()
-    message: string;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => ErrorData)
-    error_data?: ErrorData;
-}
-
-class Origin {
-    @IsEnum(['authentication', 'marketing', 'utility', 'service', 'referral_conversion'])
-    type: 'authentication' | 'marketing' | 'utility' | 'service' | 'referral_conversion';
-
-    @IsOptional()
-    @IsString()
-    expiration_timestamp?: string;
-}
-
-class Conversation {
-    @IsString()
-    id: string;
-
-    @ValidateNested()
-    @Type(() => Origin)
-    origin: Origin;
-}
-
-class Pricing {
-    @IsBoolean()
-    billable: boolean;
-
-    @IsEnum(['authentication', 'marketing', 'utility', 'service', 'referral_conversion'])
-    category: 'authentication' | 'marketing' | 'utility' | 'service' | 'referral_conversion';
-
-    @IsEnum(['CBP'])
-    pricing_model: 'CBP';
-}
-
-export class Statuses {
-    @IsOptional()
-    @IsString()
-    biz_opaque_callback_data?: string;
-
-    @ValidateNested()
-    @Type(() => Conversation)
-    conversation: Conversation;
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Error)
-    errors?: Error[];
-
-    @IsString()
-    id: string;
-
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => Pricing)
-    pricing?: Pricing;
-
-    @IsString()
-    recipient_id: string;
-
-    @IsEnum(['delivered', 'read', 'sent'])
-    status: 'delivered' | 'read' | 'sent';
-
-    @IsString()
-    timestamp: string;
-}
-
-export class Metadata {
-    @IsString()
-    display_phone_number: string;
-
-    @IsString()
-    phone_number_id: string;
-}
-
-class ChangeValue {
-    @IsString()
-    messaging_product: string;
-
-    @ValidateNested()
-    @Type(() => Metadata)
-    metadata: Metadata;
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Contact)
-    contacts?: Contact[];
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Error)
-    errors?: Error[];
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Messages)
-    messages?: Messages[];
-
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @Type(() => Statuses)
-    statuses?: Statuses[];
-}
-
-export class Change {
-    @ValidateNested()
-    @Type(() => ChangeValue)
-    value: ChangeValue;
-
-    @IsString()
-    field: string;
-}
-
-export class Entry {
-    @IsString()
-    id: string;
-
-    @ValidateNested({ each: true })
-    @Type(() => Change)
-    changes: Change[];
-}
-
-export class WhatsAppWebhookPayloadDto {
-    @IsString()
-    object: string;
-
-    @ValidateNested({ each: true })
-    @Type(() => Entry)
-    entry: Entry[];
-}
-
+const Audio = z.object({
+    id: z.string(),
+    mime_type: z.string(),
+});
+
+const Button = z.object({
+    payload: z.string(),
+    text: z.string(),
+});
+
+const ReferredProduct = z.object({
+    catalog_id: z.string(),
+    product_retailer_id: z.string(),
+});
+
+const Context = z.object({
+    forwarded: z.boolean().optional(),
+    frequently_forwarded: z.boolean().optional(),
+    from: z.string().optional(),
+    id: z.string().optional(),
+    referred_product: ReferredProduct.optional(),
+});
+
+const Document = z.object({
+    caption: z.string().optional(),
+    filename: z.string(),
+    sha256: z.string(),
+    mime_type: z.string(),
+    id: z.string(),
+});
+
+const Identity = z.object({
+    acknowledged: z.boolean(),
+    created_timestamp: z.string(),
+    hash: z.string(),
+});
+
+const Image = z.object({
+    caption: z.string().optional(),
+    sha256: z.string(),
+    id: z.string(),
+    mime_type: z.string(),
+});
+
+const ButtonReply = z.object({
+    id: z.string(),
+    title: z.string(),
+});
+
+const ListReply = z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+});
+
+const Interactive = z.object({
+    type: z.enum(["list_reply", "button_reply"]),
+    button_reply: ButtonReply.optional(),
+    list_reply: ListReply.optional(),
+});
+
+const Location = z.object({
+    address: z.string().optional(),
+    latitude: z.number(),
+    longitude: z.number(),
+    name: z.string().optional(),
+});
+
+const ProductItem = z.object({
+    product_retailer_id: z.string(),
+    quantity: z.string(),
+    item_price: z.string(),
+    currency: z.string(),
+});
+
+const Order = z.object({
+    catalog_id: z.string(),
+    text: z.string(),
+    product_items: z.array(ProductItem),
+});
+
+const Referral = z.object({
+    source_url: z.string(),
+    source_type: z.string(),
+    source_id: z.string(),
+    headline: z.string(),
+    body: z.string(),
+    media_type: z.string(),
+    image_url: z.string().optional(),
+    video_url: z.string().optional(),
+    thumbnail_url: z.string().optional(),
+    ctwa_clid: z.string(),
+});
+
+const Sticker = z.object({
+    mime_type: z.string(),
+    sha256: z.string(),
+    id: z.string(),
+    animated: z.boolean(),
+});
+
+const System = z.object({
+    body: z.string(),
+    identity: z.string().optional(),
+    new_wa_id: z.string().optional(),
+    wa_id: z.string().optional(),
+    type: z.enum(["user_changed_number", "user_identity_changed"]),
+    customer: z.string().optional(),
+});
+
+const Text = z.object({
+    body: z.string(),
+});
+
+const Video = z.object({
+    caption: z.string().optional(),
+    filename: z.string(),
+    sha256: z.string(),
+    id: z.string(),
+    mime_type: z.string(),
+});
+
+const ErrorData = z.object({
+    details: z.string(),
+});
+
+const Error = z.object({
+    code: z.number().int(),
+    title: z.string(),
+    message: z.string(),
+    error_data: ErrorData.optional(),
+});
+
+const Messages = z.object({
+    audio: Audio.optional(),
+    button: Button.optional(),
+    context: Context.optional(),
+    document: Document.optional(),
+    errors: z.array(Error).optional(),
+    from: z.string().optional(),
+    id: z.string().optional(),
+    identity: Identity.optional(),
+    image: Image.optional(),
+    interactive: Interactive.optional(),
+    location: Location.optional(),
+    order: Order.optional(),
+    referral: Referral.optional(),
+    sticker: Sticker.optional(),
+    system: System.optional(),
+    text: Text.optional(),
+    timestamp: z.string().optional(),
+    type: z.enum([
+        "audio", "button", "document", "text", "image", "interactive", "location",
+        "order", "sticker", "system", "unknown", "video",
+    ]).optional(),
+    video: Video.optional(),
+});
+
+export type Messages = z.infer<typeof Messages>
+
+const Profile = z.object({
+    name: z.string(),
+});
+
+const Contact = z.object({
+    wa_id: z.string(),
+    profile: Profile,
+});
+
+export type Contact = z.infer<typeof Contact>
+
+const Origin = z.object({
+    type: z.enum(["authentication", "marketing", "utility", "service", "referral_conversion"]),
+    expiration_timestamp: z.string().optional(),
+});
+
+const Conversation = z.object({
+    id: z.string(),
+    origin: Origin,
+});
+
+const Pricing = z.object({
+    billable: z.boolean(),
+    category: z.enum(["authentication", "marketing", "utility", "service", "referral_conversion"]),
+    pricing_model: z.enum(["CBP"]),
+});
+
+const Statuses = z.object({
+    biz_opaque_callback_data: z.string().optional(),
+    conversation: Conversation,
+    errors: z.array(Error).optional(),
+    id: z.string(),
+    pricing: Pricing.optional(),
+    recipient_id: z.string(),
+    status: z.enum(["delivered", "read", "sent"]),
+    timestamp: z.string(),
+});
+
+const Metadata = z.object({
+    display_phone_number: z.string(),
+    phone_number_id: z.string(),
+});
+
+export type Metadata = z.infer<typeof Metadata>
+
+const MessagesChangeValue = z.object({
+    messaging_product: z.string(),
+    metadata: Metadata,
+    contacts: z.array(Contact).optional(),
+    errors: z.array(Error).optional(),
+    messages: z.array(Messages).optional(),
+    statuses: z.array(Statuses).optional(),
+});
+
+const TemplateUpdateChangeValue = z.object({
+    event: z.enum(["PENDING", "APPROVED", "REJECTED", "FLAGGED", "PAUSED", "PENDING_DELETION"]),
+    message_template_id: z.string(),
+    message_template_name: z.string(),
+    message_template_language: z.string(),
+    reason: z.string(),
+    disable_info: z.object({
+        disable_date: z.string()
+    }).optional(),
+    other_info: z.object({
+        title: z.string(),
+        description: z.string()
+    }).optional()
+
+});
+
+export type TemplateStatusUpdate = z.infer<typeof TemplateUpdateChangeValue>
+
+const TemplateQualityChangeValue = z.object({
+    previous_quality_score: z.string(),
+    new_quality_score: z.string(),
+    message_template_id: z.string(),
+    message_template_name: z.string(),
+    message_template_language: z.string()
+});
+
+export type TemplateQualityUpdate = z.infer<typeof TemplateQualityChangeValue>
+
+// Create the discriminated union based on `field`
+const Change = z.discriminatedUnion("field", [
+    z.object({
+        field: z.literal("messages"),
+        value: MessagesChangeValue,
+    }),
+    z.object({
+        field: z.literal("message_template_status_update"),
+        value: TemplateUpdateChangeValue,
+    }),
+    z.object({
+        field: z.literal("message_template_quality_update"),
+        value: TemplateQualityChangeValue
+    })
+]);
+
+const Entry = z.object({
+    id: z.string(),
+    changes: z.array(Change),
+});
+
+export const WhatsAppWebhookPayloadSchema = z.object({
+    object: z.string(),
+    entry: z.array(Entry),
+});
+
+export type WhatsAppWebhookPayload = z.infer<typeof WhatsAppWebhookPayloadSchema>
 
 /*
  *
@@ -641,19 +391,45 @@ export interface InteractiveReplyButtonsMessageBody {
 }
 
 // template message
-type Parameter = {
+type TextParameter = {
     type: "text",
     text: string
 }
 
+type NamedTextParameter = {
+    type: "text",
+    parameter_name: string,
+    text: string
+}
+
+type HeaderParameter = {
+    type: "image",
+    image: {
+        id: string
+    }
+} | {
+    type: "document",
+    document: {
+        id: string
+    }
+} | {
+    type: "video",
+    video: {
+        id: string
+    }
+} | NamedTextParameter | TextParameter
+
 export type Component = {
+    type: "header",
+    parameters?: HeaderParameter[]
+} | {
     type: "body",
-    parameters: Parameter[]
+    parameters?: TextParameter[] | NamedTextParameter[]
 } | {
     type: "button",
-    sub_type: "url",
+    sub_type: "url" | "quick_reply" | "phone_number",
     index: string,
-    parameters: Parameter[]
+    parameters?: TextParameter[]
 }
 
 export interface TemplateMessageBody {
@@ -724,11 +500,94 @@ export const CHAR_LIMITS = {
 
 // API ERRORS
 export type APIError = {
-    message: string, 
-    type: string, 
+    message: string,
+    type: string,
     code: number,
     error_subcode?: number,
     error_user_title?: string,
     error_user_msg?: string,
     fbtrace_id: string
-  }
+}
+
+
+/*
+ *
+ * Meta messages API message template shapes
+ * 
+ * OBJECTS FOR BUILDING TEMPLATES FOR WHATSAPP CLOUD API
+ *
+ */
+
+
+export type TemplateButton = {
+    type: "PHONE_NUMBER",
+    text: string,
+    phone_number: string
+} | {
+    type: "URL",
+    text: string,
+    url: string,
+    example?: string[]
+} | {
+    type: "QUICK_REPLY",
+    text: string
+}
+
+export type TemplateHeader = {
+    type: "HEADER",
+    format: "TEXT",
+    text: string,
+    example?: {
+        header_text: string[]
+    }
+} | {
+    type: "HEADER",
+    format: "IMAGE" | "VIDEO" | "DOCUMENT",
+    example?: {
+        header_handle: [string,]
+    }
+} | {
+    type: "HEADER",
+    format: "LOCATION",
+    example?: {
+        header_handle: [string,]
+    }
+}
+
+export type TemplateBody = {
+    type: "BODY",
+    text: string,
+    example?: {
+        body_text: [string[],]   // not sure if variable name is a mistake in Meta's documentation
+    }
+}
+
+export type TemplateFooter = {
+    type: "FOOTER",
+    text: string
+}
+
+export type TemplateButtons = {
+    type: "BUTTONS",
+    buttons: TemplateButton[]
+}
+
+export type TemplateComponent = TemplateHeader | TemplateBody | TemplateFooter | TemplateButtons
+
+export type WhatsAppTemplateType = {
+    name: string,
+    language: "en_US",
+    category: "UTILITY" | "MARKETING" | "AUTHENTICATION",
+    components: TemplateComponent[],
+    parameter_format: "POSITIONAL"
+}
+
+export enum TemplateStatus {
+    PENDING = "PENDING",
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+    FLAGGED = "FLAGGED",
+    PAUSED = "PAUSED",
+    PENDING_DELETION = "PENDING_DELETION"
+
+}

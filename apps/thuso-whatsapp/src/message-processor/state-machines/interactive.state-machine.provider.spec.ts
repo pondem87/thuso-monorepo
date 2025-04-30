@@ -9,17 +9,18 @@ import { Product, ProductsStateService } from '../machine-states/products-state.
 import { LLMQueueService } from '../services/llm-queue.service';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from "uuid";
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 describe('MessageProcessorService', () => {
     let provider: InteractiveStateMachineProvider;
     let fetchMock: jest.SpyInstance
-    
+
     const llmQueueService = {
         sendPlainTextToLLM: jest.fn()
     }
 
     const whatsappRmqClient = {
-        emit: jest.fn()
+        emitWhatsappQueue: jest.fn()
     }
 
     const graphAPIService = {
@@ -47,10 +48,6 @@ describe('MessageProcessorService', () => {
                     useValue: llmQueueService
                 },
                 {
-                    provide: WhatsappRmqClient,
-                    useValue: whatsappRmqClient
-                },
-                {
                     provide: ConfigService,
                     useValue: {
                         get: jest.fn().mockImplementation((input) => input)
@@ -59,6 +56,10 @@ describe('MessageProcessorService', () => {
                 {
                     provide: GraphAPIService,
                     useValue: graphAPIService
+                },
+                {
+                    provide: ThusoClientProxiesService,
+                    useValue: whatsappRmqClient
                 }
             ],
         }).compile();
@@ -68,7 +69,7 @@ describe('MessageProcessorService', () => {
 
     afterEach(() => {
         llmQueueService.sendPlainTextToLLM.mockClear()
-        whatsappRmqClient.emit.mockClear()
+        whatsappRmqClient.emitWhatsappQueue.mockClear()
     })
 
     it('state machine should start', () => {
@@ -97,7 +98,7 @@ describe('MessageProcessorService', () => {
 
         ismActor.start()
 
-        expect(ismActor.getSnapshot().value).toEqual({home: "ready"})
+        expect(ismActor.getSnapshot().value).toEqual({ home: "ready" })
         expect(ismActor.getSnapshot().context).toMatchObject({
             wabaId,
             contact,
@@ -147,7 +148,7 @@ describe('MessageProcessorService', () => {
 
         ismActor.start()
 
-        expect(ismActor.getSnapshot().value).toEqual({home: "ready"})
+        expect(ismActor.getSnapshot().value).toEqual({ home: "ready" })
         expect(ismActor.getSnapshot().context).toMatchObject({
             wabaId,
             contact,
@@ -269,7 +270,7 @@ describe('MessageProcessorService', () => {
 
         ismActor.start()
 
-        expect(ismActor.getSnapshot().value).toEqual({home: "ready"})
+        expect(ismActor.getSnapshot().value).toEqual({ home: "ready" })
         expect(ismActor.getSnapshot().context).toMatchObject({
             wabaId,
             contact,
@@ -280,11 +281,11 @@ describe('MessageProcessorService', () => {
             type: "products"
         })
 
-        expect(ismActor.getSnapshot().value).toEqual({products: { productsMenu: "ready" }})
+        expect(ismActor.getSnapshot().value).toEqual({ products: { productsMenu: "ready" } })
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledTimes(1)
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 
         const messengerPayload: MessengerRMQMessage = {
             wabaId,
@@ -298,7 +299,7 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledWith(
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload
         )
@@ -407,7 +408,7 @@ describe('MessageProcessorService', () => {
 
         ismActor.start()
 
-        expect(ismActor.getSnapshot().value).toEqual({home: "ready"})
+        expect(ismActor.getSnapshot().value).toEqual({ home: "ready" })
         expect(ismActor.getSnapshot().context).toMatchObject({
             wabaId,
             contact,
@@ -418,11 +419,11 @@ describe('MessageProcessorService', () => {
             type: "products"
         })
 
-        expect(ismActor.getSnapshot().value).toEqual({products: { productsMenu: "ready" }})
+        expect(ismActor.getSnapshot().value).toEqual({ products: { productsMenu: "ready" } })
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledTimes(1)
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 
         const messengerPayload: MessengerRMQMessage = {
             wabaId,
@@ -436,7 +437,7 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledWith(
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload
         )
@@ -470,7 +471,7 @@ describe('MessageProcessorService', () => {
             (snapshot) => snapshot.hasTag("executed") || snapshot.hasTag("ready")
         )
 
-        expect(ismActor.getSnapshot().value).toEqual({products: { productsMenu: "executed" }})
+        expect(ismActor.getSnapshot().value).toEqual({ products: { productsMenu: "executed" } })
 
         await new Promise((resolve) => setImmediate(resolve));
 
@@ -481,7 +482,7 @@ describe('MessageProcessorService', () => {
             `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/management/documents/download/${products[0].s3key}`
         )
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledTimes(2)
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(2)
 
         const messengerPayload2: MessengerRMQMessage = {
             wabaId,
@@ -498,7 +499,7 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emit).toHaveBeenCalledWith(
+        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload2
         )

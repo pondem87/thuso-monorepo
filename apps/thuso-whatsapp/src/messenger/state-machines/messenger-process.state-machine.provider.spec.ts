@@ -131,7 +131,8 @@ describe('MessengerProcessStateMachineProvider', () => {
         expect(mockMetricsService.findValidConversation).toHaveBeenCalledTimes(1)
         expect(mockMetricsService.findValidConversation).toHaveBeenCalledWith(
             payload.metadata.phone_number_id,
-            payload.contact.wa_id
+            payload.contact.wa_id,
+            "service"
         )
         expect(mockGraphApi.messages).toHaveBeenCalledTimes(1)
 
@@ -261,7 +262,8 @@ describe('MessengerProcessStateMachineProvider', () => {
         expect(mockMetricsService.findValidConversation).toHaveBeenCalledTimes(1)
         expect(mockMetricsService.findValidConversation).toHaveBeenCalledWith(
             payload.metadata.phone_number_id,
-            payload.contact.wa_id
+            payload.contact.wa_id,
+            "service"
         )
         expect(mockGraphApi.messages).toHaveBeenCalledTimes(1)
         expect(mockGraphApi.messages).toHaveBeenCalledWith(

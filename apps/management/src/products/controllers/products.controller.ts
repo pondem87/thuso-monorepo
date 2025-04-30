@@ -1,13 +1,12 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UploadedFile, UseGuards } from '@nestjs/common';
 import { Logger } from 'winston';
 import { AuthGuard } from '../../auth/auth-guard';
 import { PermissionsGuard } from '../../accounts/permissions-guard';
 import { PermissionsDecorator } from '../../accounts/permissions.decorator';
 import { LoggingService } from '@lib/logging';
 import { PermissionAction } from '../../accounts/types';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from '../services/products.service';
-import { CreateProductDto } from '../dto/create-product.dto';
+import { CreateProductDto, ProductMediaDto } from '../dto/create-product.dto';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('management/:account/products')
@@ -29,14 +28,13 @@ export class ProductsController {
     @PermissionsDecorator([
         { entity: "product", action: PermissionAction.CREATE }
     ])
-    @UseInterceptors(FileInterceptor('file'))
     @Post()
     createProduct(
         @Param('account') accountId: string,
         @UploadedFile() file: Express.Multer.File,
         @Body() data: CreateProductDto
     ) {
-        return this.productsService.createProduct(accountId, data, file)
+        return this.productsService.createProduct(accountId, data)
     }
 
     @PermissionsDecorator([
@@ -46,9 +44,10 @@ export class ProductsController {
     listProducts(
         @Param('account') accountId: string,
         @Query('skip', new ParseIntPipe({ optional: true })) skip?: number,
-        @Query('take', new ParseIntPipe({ optional: true })) take?: number
+        @Query('take', new ParseIntPipe({ optional: true })) take?: number,
+        @Query('search') search?: string
     ) {
-        return this.productsService.listProducts(accountId, skip, take)
+        return this.productsService.listProducts(accountId, skip, take, search)
     }
 
     @PermissionsDecorator([
@@ -65,15 +64,13 @@ export class ProductsController {
     @PermissionsDecorator([
         { entity: "product", action: PermissionAction.UPDATE }
     ])
-    @UseInterceptors(FileInterceptor('product'))
     @Patch(":productId")
     editProduct(
         @Param('account') accountId: string,
         @Param('productId') id: string,
-        @UploadedFile() file: Express.Multer.File,
         @Body() data: CreateProductDto
     ) {
-        return this.productsService.editProduct(accountId, id, data, file)
+        return this.productsService.editProduct(accountId, id, data)
     }
 
     @PermissionsDecorator([
@@ -85,5 +82,29 @@ export class ProductsController {
         @Param('productId') id: string,
     ) {
         return this.productsService.deleteProduct(accountId, id)
+    }
+
+    @PermissionsDecorator([
+        { entity: "product", action: PermissionAction.UPDATE }
+    ])
+    @Delete(":productId/media/:mediaId")
+    deleteMedia(
+        @Param('account') accountId: string,
+        @Param('productId') productId: string,
+        @Param('mediaId') mediaId: string
+    ) {
+        return this.productsService.deleteProductMedia(accountId, productId, mediaId)
+    }
+
+    @PermissionsDecorator([
+        { entity: "product", action: PermissionAction.READ }
+    ])
+    @Get(":productId/media/:mediaId")
+    getMediaLink(
+        @Param('account') accountId: string,
+        @Param('productId') productId: string,
+        @Param('mediaId') mediaId: string
+    ) {
+        return this.productsService.getMediaLink(accountId, productId, mediaId)
     }
 }

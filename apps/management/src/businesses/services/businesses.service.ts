@@ -4,17 +4,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { ConfigService } from '@nestjs/config';
 import { DeleteResult, EntityNotFoundError, Repository } from 'typeorm';
-import { APIError, emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage } from '@lib/thuso-common';
+import { APIError, BusinessProfileUpdateChatAgentPattern, BusinessProfileUpdateMessageProcessorPattern, BusinessProfileUpdateMessengerPattern, BusinessProfileUpdatePayload, BusinessUpdateChatAgentPattern, BusinessUpdateMessageProcessorPattern, BusinessUpdateMessengerPattern, emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
 import { WhatsAppBusiness } from '../entities/whatsapp-business.entity';
-import { WhatsAppNumber } from '../entities/whatsapp-number';
+import { WhatsAppNumber } from '../entities/whatsapp-number.entity';
 import { Account } from '../../accounts/entities/account.entity';
 import { CreateBusinessProfileDto } from '../dto/create-business-profile.dto';
 import { CreateBusinessDto } from '../dto/create-business.dto';
 import { WhatsAppBusinessDto, WhatsAppNumberDto, BusinessProfileDto } from '../dto/response-dtos.dto';
 import { UpdateBusinessProfileDto } from '../dto/update-business-profile.dto';
 import { BusinessProfile } from '../entities/business-profile.entity';
-import { ClientProxy } from '@nestjs/microservices';
 import { User } from '../../accounts/entities/user.entity';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 @Injectable()
 export class BusinessesService {
@@ -31,8 +31,7 @@ export class BusinessesService {
         private readonly accountRepository: Repository<Account>,
         private readonly loggingService: LoggingService,
         private readonly configService: ConfigService,
-        @Inject(MgntRmqClient)
-        private readonly mgntRmqClient: ClientProxy
+        private readonly clientsService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "businesses",
@@ -42,7 +41,7 @@ export class BusinessesService {
         this.logger.info("Businesses service created")
     }
 
-    async createWhatsAppBusiness(user: User, accountId: string, data: CreateBusinessDto): Promise<{ waba: WhatsAppBusinessDto, appNumber: WhatsAppNumberDto} | { error: string }> {
+    async createWhatsAppBusiness(user: User, accountId: string, data: CreateBusinessDto): Promise<{ waba: WhatsAppBusinessDto, appNumber: WhatsAppNumberDto } | { error: string }> {
         // Get business token from meta
         try {
             const accessTokenUrlRoot = `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/oauth/access_token`
@@ -156,7 +155,7 @@ export class BusinessesService {
                         // This means the pin is incorrect
                         // Send email to user notify that a pin change is required
                         this.logger.warn("Pin change required", { accountId, phone_number_id: appNumber.appNumberId })
-                        this.mgntRmqClient.emit(SendEmailEventPattern, {
+                        this.clientsService.emitMgntQueue(SendEmailEventPattern, {
                             email: user.email,
                             subject: "Thuso: WhatsApp Number Pin Change Required",
                             html: this.generatePinChangeEmail("WhatsApp Number Pin Change Required"),
@@ -165,6 +164,18 @@ export class BusinessesService {
                     }
                 }
             }
+
+            // inform services of business creation
+            const businessDataPayload = {
+                businessData: {
+                    ...business
+                },
+                event: "NEW"
+            } as WhatsAppBusinessUpdatePayload
+
+            this.clientsService.emitWhatsappQueue(BusinessUpdateMessageProcessorPattern, businessDataPayload)
+            this.clientsService.emitWhatsappQueue(BusinessUpdateMessengerPattern, businessDataPayload)
+            this.clientsService.emitLlmQueue(BusinessUpdateChatAgentPattern, businessDataPayload)
 
             return {
                 waba: new WhatsAppBusinessDto(business),
@@ -459,6 +470,19 @@ export class BusinessesService {
             business.businessProfile = businessProfile
             await this.whatsappBusinessRepository.save(business)
 
+            // inform services of this business profile creation
+            const businessProfileDataPayload: BusinessProfileUpdatePayload = {
+                businessProfileData: {
+                    ...businessProfile,
+                    waba: business
+                },
+                event: "NEW"
+            }
+
+            this.clientsService.emitWhatsappQueue(BusinessProfileUpdateMessageProcessorPattern, businessProfileDataPayload)
+            this.clientsService.emitWhatsappQueue(BusinessProfileUpdateMessengerPattern, businessProfileDataPayload)
+            this.clientsService.emitLlmQueue(BusinessProfileUpdateChatAgentPattern, businessProfileDataPayload)
+
             // Returning the updated business with profile details
             return new BusinessProfileDto(businessProfile)
         } catch (error) {
@@ -475,7 +499,7 @@ export class BusinessesService {
             });
 
             if (data.businessId) {
-                const business = await this.whatsappBusinessRepository.findOneBy({id: data.businessId})
+                const business = await this.whatsappBusinessRepository.findOneBy({ id: data.businessId })
                 if (business) businessProfile.waba = business
                 delete data.businessId
             }
@@ -485,7 +509,21 @@ export class BusinessesService {
                 businessProfile[key] = data[key]
             }
 
-            return new BusinessProfileDto(await this.businessProfileRepository.save(businessProfile));
+            const newBusinessProfile = await this.businessProfileRepository.save(businessProfile);
+
+            // inform services of this business profile update
+            const businessProfileDataPayload: BusinessProfileUpdatePayload = {
+                businessProfileData: {
+                    ...newBusinessProfile
+                },
+                event: "UPDATE"
+            }
+
+            this.clientsService.emitWhatsappQueue(BusinessProfileUpdateMessageProcessorPattern, businessProfileDataPayload)
+            this.clientsService.emitWhatsappQueue(BusinessProfileUpdateMessengerPattern, businessProfileDataPayload)
+            this.clientsService.emitLlmQueue(BusinessProfileUpdateChatAgentPattern, businessProfileDataPayload)
+
+            return new BusinessProfileDto(businessProfile);
         } catch (error) {
             this.logger.error("Error while updating business profile", { accountId, profileId: id, error: JSON.stringify(error) });
             throw new HttpException("Error while updating business profile", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -502,7 +540,19 @@ export class BusinessesService {
             const businessProfile = await this.businessProfileRepository.findOne({ where: { id } })
 
             business.businessProfile = businessProfile
-            await this.whatsappBusinessRepository.save(business)
+            const newBusiness = await this.whatsappBusinessRepository.save(business)
+
+            // inform services of business update
+            const businessDataPayload = {
+                businessData: {
+                    ...newBusiness
+                },
+                event: "UPDATE"
+            } as WhatsAppBusinessUpdatePayload
+
+            this.clientsService.emitWhatsappQueue(BusinessUpdateMessageProcessorPattern, businessDataPayload)
+            this.clientsService.emitWhatsappQueue(BusinessUpdateMessengerPattern, businessDataPayload)
+            this.clientsService.emitLlmQueue(BusinessUpdateChatAgentPattern, businessDataPayload)
 
             return { success: true }
 

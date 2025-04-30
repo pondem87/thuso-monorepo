@@ -5,6 +5,8 @@ import { ThusoWhatsappModule } from '../../src/thuso-whatsapp.module';
 import { LONG_TEST_TIMEOUT, MessageProcessorEventPattern, MessageProcessorRMQMessage, WhatsappRmqClient } from '@lib/thuso-common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import AppDataSource from '../../src/db/datasource'
 
 describe('Whatsapp webhook (e2e)', () => {
     let app: INestApplication;
@@ -13,7 +15,17 @@ describe('Whatsapp webhook (e2e)', () => {
 
     beforeEach(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ThusoWhatsappModule],
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ThusoWhatsappModule
+            ],
         })
         .overrideProvider(WhatsappRmqClient)
         .useValue({

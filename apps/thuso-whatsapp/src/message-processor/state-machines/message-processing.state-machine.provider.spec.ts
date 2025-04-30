@@ -9,6 +9,7 @@ import { LLMQueueService } from "../services/llm-queue.service";
 import { Contact, GraphAPIService, Messages, Metadata, WhatsappRmqClient } from "@lib/thuso-common";
 import { ConfigService } from "@nestjs/config";
 import { AnyActorRef, waitFor } from "xstate";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 
 describe('MessageProcessorService', () => {
@@ -40,7 +41,7 @@ describe('MessageProcessorService', () => {
                     useValue: llmQueueService
                 },
                 {
-                    provide: WhatsappRmqClient,
+                    provide: ThusoClientProxiesService,
                     useValue: {}
                 },
                 {

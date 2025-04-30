@@ -15,9 +15,10 @@ import { HomeStateService } from './machine-states/home-state.service';
 import { ProductsStateService } from './machine-states/products-state.service';
 import { MessageProcessingStateMachineProvider } from './state-machines/message-processing.state-machine.provider';
 import { MessageProcessorAccountData } from './entities/account-data.entity';
+import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MessageProcessorAccountData, PersistedInteractiveState]), ConfigModule, LoggingModule, ThusoCommonModule],
+  imports: [TypeOrmModule.forFeature([MessageProcessorAccountData, PersistedInteractiveState]), ConfigModule, LoggingModule, ThusoCommonModule, ThusoClientProxiesModule],
   controllers: [MessageProcessorController],
   providers: [
     MessageProcessorService,
@@ -30,38 +31,7 @@ import { MessageProcessorAccountData } from './entities/account-data.entity';
     HomeStateService,
     ProductsStateService,
     MessageProcessingStateMachineProvider,
-    {
-      provide: LlmRmqClient,
-      useFactory: (configService: ConfigService) => {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
-            queue: configService.get<string>("AI_RMQ_QUEUENAME"),
-            queueOptions: {
-              durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true" ? true : false
-            },
-          },
-        });
-      },
-      inject: [ConfigService],
-    },
-    {
-      provide: WhatsappRmqClient,
-      useFactory: (configService: ConfigService) => {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
-            queue: configService.get<string>("WHATSAPP_RMQ_QUEUENAME"),
-            queueOptions: {
-              durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true"
-            },
-          },
-        })
-      },
-      inject: [ConfigService]
-    }
+    ThusoClientProxiesService
   ]
 })
 export class MessageProcessorModule { }

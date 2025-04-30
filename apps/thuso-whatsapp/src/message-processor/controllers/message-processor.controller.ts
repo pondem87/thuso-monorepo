@@ -2,8 +2,9 @@ import { LoggingService } from '@lib/logging';
 import { Controller } from '@nestjs/common';
 import { Logger } from 'winston';
 import { MessageProcessorService } from '../services/message-processor.service';
-import { EventPattern } from '@nestjs/microservices';
-import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, MessageProcessorRMQMessage } from '@lib/thuso-common';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { AccountDataUpdatePayload, AccountUpdateMessageProcessorPattern, BusinessProfileUpdateMessageProcessorPattern, BusinessProfileUpdatePayload, BusinessUpdateMessageProcessorPattern, ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, MessageProcessorRMQMessage, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
+import { AccountDataService } from '../services/account-data.service';
 
 @Controller('message-processor')
 export class MessageProcessorController {
@@ -11,7 +12,8 @@ export class MessageProcessorController {
 
     constructor(
         private readonly messageProcessorService: MessageProcessorService,
-        private readonly loggingService: LoggingService
+        private readonly loggingService: LoggingService,
+        private readonly accountDataService: AccountDataService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "message-processor",
@@ -29,5 +31,26 @@ export class MessageProcessorController {
     @EventPattern(ContactlessMessageProcessorEventPattern)
     async processNoContactsMessage(payload: MessageProcessorRMQMessage) {
         await this.messageProcessorService.processNoContactsMessage(payload)
+    }
+
+    @EventPattern(AccountUpdateMessageProcessorPattern)
+    processAccountUpdate(
+        @Payload() data: AccountDataUpdatePayload
+    ) {
+        return this.accountDataService.processAccountUpdate(data)
+    }
+
+    @EventPattern(BusinessUpdateMessageProcessorPattern)
+    processBusinessUpdate(
+        @Payload() data: WhatsAppBusinessUpdatePayload
+    ) {
+        return this.accountDataService.processBusinessUpdate(data)
+    }
+
+    @EventPattern(BusinessProfileUpdateMessageProcessorPattern)
+    processBusinessProfileUpdate(
+        @Payload() data: BusinessProfileUpdatePayload
+    ) {
+        return this.accountDataService.processProfileUpdate(data)
     }
 }

@@ -1,3 +1,4 @@
+import { OnboardingState } from "@lib/thuso-common";
 import { Account } from "../entities/account.entity";
 import { Invitation } from "../entities/invitation.entity";
 import { Permission } from "../entities/permission.entity";
@@ -39,6 +40,7 @@ export class UserDto {
     rootOf?: AccountDto;
     permissions?: PermissionDto[];
     accounts?: AccountDto[];
+    onboardingState: OnboardingState
 
     constructor(user: User) {
         this.id = user.id;
@@ -47,6 +49,7 @@ export class UserDto {
         this.surname = user.surname;
         this.verified = user.verified;
         this.createdAt = user.createdAt;
+        this.onboardingState = user.onboardingState
 
         if (user.rootOf) {
             this.rootOf = new AccountDto(user.rootOf);

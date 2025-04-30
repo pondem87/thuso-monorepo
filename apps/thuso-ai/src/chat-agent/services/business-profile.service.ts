@@ -1,5 +1,5 @@
 import { LoggingService } from '@lib/logging';
-import { isDateLessThanHoursOld } from '@lib/thuso-common';
+import { BusinessProfileUpdatePayload, isDateLessThanHoursOld, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
@@ -51,12 +51,12 @@ export class BusinessProfileService {
             const businessData = await this.fetchProfileData(wabaId)
             if (!businessData) return null
 
-            businessProfile.profileId = businessData.businessProfile?.id,
-            businessProfile.name = businessData.businessProfile?.name,
-            businessProfile.tagline = businessData.businessProfile?.tagline,
-            businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription,
-            businessProfile.about = businessData.businessProfile?.about,
-            businessProfile.imageLogoId = businessData.businessProfile?.imageLogoId,
+            businessProfile.profileId = businessData.businessProfile?.id
+            businessProfile.name = businessData.businessProfile?.name
+            businessProfile.tagline = businessData.businessProfile?.tagline
+            businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
+            businessProfile.about = businessData.businessProfile?.about
+            businessProfile.imageLogoId = businessData.businessProfile?.imageLogoId
             businessProfile.imageBannerId = businessData.businessProfile?.imageBannerId
 
             businessProfile = await this.businessProfileRepo.save(businessProfile)
@@ -85,6 +85,93 @@ export class BusinessProfileService {
         } catch (error) {
             this.logger.error("Failed to get business profile", { wabaId, error })
             return null
+        }
+    }
+
+    async processProfileUpdateService(data: BusinessProfileUpdatePayload) {
+        try {
+            const wabaId = data.businessProfileData.waba?.id
+            if(!wabaId) {
+                return
+            }
+
+            let businessProfile = await this.businessProfileRepo.findOne({ where: { wabaId } })
+
+            if (!businessProfile) {
+                // Create a new business profile
+                const businessData = data.businessProfileData.waba
+                businessData.businessProfile = data.businessProfileData
+
+                businessProfile = await this.businessProfileRepo.save(
+                    this.businessProfileRepo.create({
+                        wabaId: businessData.wabaId,
+                        accountId: businessData.accountId,
+                        profileId: businessData.businessProfile?.id,
+                        name: businessData.businessProfile?.name,
+                        tagline: businessData.businessProfile?.tagline,
+                        serviceDescription: businessData.businessProfile?.serviceDescription,
+                        about: businessData.businessProfile?.about,
+                        imageLogoId: businessData.businessProfile?.imageLogoId,
+                        imageBannerId: businessData.businessProfile?.imageBannerId
+                    })
+                )
+            } else {
+                // Update the business profile
+                const businessData = data.businessProfileData.waba
+                businessData.businessProfile = data.businessProfileData
+
+                businessProfile.profileId = businessData.businessProfile?.id
+                businessProfile.name = businessData.businessProfile?.name
+                businessProfile.tagline = businessData.businessProfile?.tagline
+                businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
+                businessProfile.about = businessData.businessProfile?.about
+                businessProfile.imageLogoId = businessData.businessProfile?.imageLogoId
+                businessProfile.imageBannerId = businessData.businessProfile?.imageBannerId
+
+                businessProfile = await this.businessProfileRepo.save(businessProfile)
+            }
+        } catch (error) {
+            this.logger.error("Error while processing business profile update message", { error })
+        }
+    }
+
+    async processBusinessUpdate(data: WhatsAppBusinessUpdatePayload) {
+        try {
+            let businessProfile = await this.businessProfileRepo.findOne({ where: { wabaId: data.businessData.wabaId } })
+
+            if (!businessProfile) {
+                // Create a new business profile
+                const businessData = data.businessData
+
+                businessProfile = await this.businessProfileRepo.save(
+                    this.businessProfileRepo.create({
+                        wabaId: businessData.wabaId,
+                        accountId: businessData.accountId,
+                        profileId: businessData.businessProfile?.id,
+                        name: businessData.businessProfile?.name,
+                        tagline: businessData.businessProfile?.tagline,
+                        serviceDescription: businessData.businessProfile?.serviceDescription,
+                        about: businessData.businessProfile?.about,
+                        imageLogoId: businessData.businessProfile?.imageLogoId,
+                        imageBannerId: businessData.businessProfile?.imageBannerId
+                    })
+                )
+            } else {
+                // Update the business profile
+                const businessData = data.businessData
+
+                businessProfile.profileId = businessData.businessProfile?.id
+                businessProfile.name = businessData.businessProfile?.name
+                businessProfile.tagline = businessData.businessProfile?.tagline
+                businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
+                businessProfile.about = businessData.businessProfile?.about
+                businessProfile.imageLogoId = businessData.businessProfile?.imageLogoId
+                businessProfile.imageBannerId = businessData.businessProfile?.imageBannerId
+
+                businessProfile = await this.businessProfileRepo.save(businessProfile)
+            }
+        } catch (error) {
+            this.logger.error("Error while processing business update message", { error })
         }
     }
 }

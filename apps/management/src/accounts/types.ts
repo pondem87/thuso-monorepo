@@ -6,6 +6,9 @@ export enum PermissionAction {
 }
 
 export type PermissionType = {
-    entity: "account" | "invitation" | "permission" | "user" | "whatsapp_business" | "business_profile" | "whatsapp_number" | "document" | "product",
+    entity: "account" | "invitation" |
+        "permission" | "user" | "whatsapp_business" | "business_profile" |
+        "whatsapp_number" | "document" | "product" | "customer" | "whatsapp_template" |
+        "media_file" | "customer_action" | "chats"
     action: PermissionAction
 }

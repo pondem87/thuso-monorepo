@@ -5,11 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggingModule } from '@lib/logging';
 import { ConfigService } from '@nestjs/config';
 import { Document } from './entity/document.entity';
-import { DocumentDownloadController } from './download.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Document]), LoggingModule],
-  controllers: [DocumentsController, DocumentDownloadController],
+  controllers: [DocumentsController],
   providers: [DocumentsService, ConfigService],
   exports: [TypeOrmModule]
 })

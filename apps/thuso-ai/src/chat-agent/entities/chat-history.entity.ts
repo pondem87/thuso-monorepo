@@ -4,8 +4,14 @@ import { ChatTopic } from "./chat-topic.entity";
 
 @Entity()
 export class ChatHistory {
-    @PrimaryGeneratedColumn("uuid")
-    id: string
+    @PrimaryColumn("varchar")
+    userId: string
+
+    @PrimaryColumn("varchar")
+    phoneNumberId: string
+
+    @Column("uuid", { nullable: true})
+    crmId: string
 
     @Column("varchar")
     wabaId: string
@@ -16,11 +22,11 @@ export class ChatHistory {
     @OneToMany(() => ChatTopic, (chatTopic) => chatTopic.chatHistory)
     topics: ChatTopic
 
-    @PrimaryColumn("varchar")
-    userId: string
+    @Column("timestamp", { nullable: true })
+    lastMessageTime: Date
 
-    @PrimaryColumn("varchar")
-    phoneNumberId: string
+    @Column("varchar", { nullable: true })
+    lastTopic: string
 
     @UpdateDateColumn()
     updatedAt: Date

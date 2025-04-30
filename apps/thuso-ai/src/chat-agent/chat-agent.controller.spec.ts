@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ChatAgentController } from './chat-agent.controller';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
 import { ChatAgentService } from './chat-agent.service';
+import { BusinessProfileService } from './services/business-profile.service';
+import { ChatMessageHistoryService } from './chat-message-history/chat-message-history.service';
 
 describe('ChatAgentController', () => {
   let controller: ChatAgentController;
@@ -16,6 +18,14 @@ describe('ChatAgentController', () => {
         },
         {
           provide: ChatAgentService,
+          useValue: {}
+        },
+        {
+          provide: BusinessProfileService,
+          useValue: {}
+        },
+        {
+          provide: ChatMessageHistoryService,
           useValue: {}
         }
       ]

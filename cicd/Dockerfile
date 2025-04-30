@@ -10,9 +10,7 @@ COPY ./package.json ./
 # Install dependencies in production mode
 RUN npm install
 
-COPY ./dist/apps/management ./management
-COPY ./dist/apps/thuso-whatsapp ./thuso-whatsapp
-COPY ./dist/apps/thuso-ai ./thuso-ai
+COPY ./dist/apps ./apps
 
 COPY ./ssl ./ssl
 

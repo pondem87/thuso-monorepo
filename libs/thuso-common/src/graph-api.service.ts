@@ -4,7 +4,6 @@ import { Logger } from "winston";
 import axios from "axios";
 import { LoggingService } from "@lib/logging";
 import { MessageBody, MessagesResponse } from "@lib/thuso-common";
-import path from "path";
 const FormData = require("form-data");
 
 @Injectable()
@@ -60,7 +59,7 @@ export class GraphAPIService {
             this.logger.debug("Uploading file url: ", {mediaUrl})
             this.logger.debug("Uploading file type: ", {mediaType})
 
-            const readStream = await axios.get(mediaUrl, { responseType: 'stream' })
+            const readStream = await axios.get(mediaUrl, { responseType: 'stream', timeout: 120000 })
 
             const formData = new FormData()
             formData.append("messaging_product", "whatsapp")
@@ -74,7 +73,8 @@ export class GraphAPIService {
                     headers: {
                         'Authorization': `Bearer ${businessToken}`,
                         ...formData.getHeaders()
-                    }
+                    },
+                    timeout: 120000
                 });
 
             if (!(response.status === 200 || response.status === 201)) {

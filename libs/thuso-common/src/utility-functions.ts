@@ -1,4 +1,5 @@
 import { extname } from "path";
+import { WHATSAPP_DOCS_MIMETYPES, WHATSAPP_IMAGES_MIMETYPES } from "./constants";
 
 export function generateRandomString(length: number, mode: "alpha-numeric-caps" | "alpha-numeric" | "alpha" | "alpha-caps" | "numeric" = "alpha-numeric-caps"): string {
     let characters: string
@@ -87,7 +88,7 @@ export function numberToMonth(number: number) {
     }
 }
 
-export function generateS3Key(type: "image" | "document", subfolder: string, filename: string): string {
+export function generateS3Key(type: "image" | "document" | "video", subfolder: string, filename: string): string {
     return `${type}/${subfolder}/${generateRandomString(15, "alpha")}${extname(filename)}`
 }
 
@@ -100,6 +101,22 @@ export function cropTextToLength(text: string, length: number): string {
 
 export function getDateOnly(date: Date): string {
     return date.toISOString().split("T")[0];
+}
+
+export function getFileCategory(mimetype: string): "image" | "video" | "document" {
+    if (WHATSAPP_IMAGES_MIMETYPES.includes(mimetype)) {
+      return "image";
+    }
+  
+    if (mimetype.startsWith("video/")) {
+      return "video";
+    }
+  
+    if (WHATSAPP_DOCS_MIMETYPES.includes(mimetype)) {
+      return "document";
+    }
+
+    return
 }
 
 export function emailHtmlTemplate(heading: string, content: string) {

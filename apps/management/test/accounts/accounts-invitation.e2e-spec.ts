@@ -1,6 +1,6 @@
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt'
-import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, SendEmailEventPattern } from '@lib/thuso-common';
+import { generateRandomString, LONG_TEST_TIMEOUT, MgntRmqClient, SendEmailEventPattern, UserUpdateAccountsPattern } from '@lib/thuso-common';
 import { INestApplication } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from '../../src/accounts/entities/user.entity';
@@ -10,6 +10,7 @@ import { ManagementModule } from '../../src/management.module';
 import * as request from 'supertest';
 import { Invitation } from '../../src/accounts/entities/invitation.entity';
 import { UserToken } from '../../src/auth/entities/user-token.entity';
+import AppDataSource from '../../src/db/datasource';
 
 
 describe('Accounts Invitations (e2e)', () => {
@@ -29,7 +30,17 @@ describe('Accounts Invitations (e2e)', () => {
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ManagementModule],
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ManagementModule
+            ],
         })
             .overrideProvider(MgntRmqClient).useValue(mgntQClient)
             .compile();
@@ -131,17 +142,25 @@ describe('Accounts Invitations (e2e)', () => {
                 expect(res.body).toEqual({ email: testUserEmail2, accountName: testAccountName1 })
             })
 
+        const user = await userRepository.findOneBy({ email: testUserEmail2 })
+
         // check verication email was sent
         expect(mgntQClient.emit).toHaveBeenCalledTimes(2)
-        expect(mgntQClient.emit).toHaveBeenCalledWith(
-            SendEmailEventPattern,
-            expect.objectContaining({
-                email: testUserEmail2,
-                subject: "Account Verification",
-                text: expect.any(String),
-                html: expect.any(String)
-            }))
-
+        expect(mgntQClient.emit).toHaveBeenNthCalledWith(
+            2,
+            UserUpdateAccountsPattern,
+            {
+                event: "NEW-GUEST",
+                userData: {
+                    createdAt: user?.createdAt,
+                    email: user?.email,
+                    forenames: user?.forenames,
+                    surname: user?.surname,
+                    verificationCode: user?.verificationCode,
+                    verified: user?.verified,
+                    id: user?.id
+                }
+            })
 
         // check user was added to account
         const user2 = await userRepository.findOne({ where: { email: testUserEmail2 }, relations: { accounts: true } })

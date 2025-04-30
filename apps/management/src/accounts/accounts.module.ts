@@ -14,34 +14,22 @@ import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { AccountsApiController } from './controllers/account.api.controller';
 import { AccountsApiService } from './services/accounts.api.service';
 import { AccountsRmqController } from './controllers/accounts.rmq.controller';
+import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { AccountsRmqService } from './services/accounts.rmq.service';
 
 @Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([Account, User, Permission, Invitation]),
     LoggingModule, forwardRef(() => AuthModule),
+    ThusoClientProxiesModule
   ],
   controllers: [AccountsController, AccountsApiController, AccountsRmqController],
   providers: [
     AccountsService,
     AccountsApiService,
-    {
-      provide: MgntRmqClient,
-      useFactory: (configService: ConfigService) => {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
-            queue: configService.get<string>("MANAGEMENT_RMQ_QUEUENAME"),
-            // noAck: false,
-            queueOptions: {
-              durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true" ? true : false
-            },
-          },
-        });
-      },
-      inject: [ConfigService],
-    }
+    ThusoClientProxiesService,
+    AccountsRmqService
   ],
   exports: [TypeOrmModule, AccountsService]
 })

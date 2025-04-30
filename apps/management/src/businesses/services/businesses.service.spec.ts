@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BusinessesService } from './businesses.service';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { WhatsAppNumber } from '../entities/whatsapp-number';
+import { WhatsAppNumber } from '../entities/whatsapp-number.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { Account } from '../../accounts/entities/account.entity';
 import { WhatsAppBusiness } from '../entities/whatsapp-business.entity';
 import { ConfigService } from '@nestjs/config';
-import { MgntRmqClient } from '@lib/thuso-common';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 describe('BusinessesService', () => {
   let service: BusinessesService;
@@ -37,7 +37,7 @@ describe('BusinessesService', () => {
           useValue: {}
         },
         {
-          provide: MgntRmqClient,
+          provide: ThusoClientProxiesService,
           useValue: {}
         },
         {

@@ -5,7 +5,7 @@ import { Logger } from "winston"
 import { InjectRepository } from "@nestjs/typeorm"
 import { Repository } from "typeorm"
 import { DailyMetrics } from "../entities/daily-metrics.entity"
-import { RunningMetrics } from "../entities/running-metrics"
+import { RunningMetrics } from "../entities/running-metrics.entity"
 import { Conversation } from "../entities/conversation.entity"
 import { MessageBody } from "@lib/thuso-common"
 import { SentMessage } from "../entities/sent-message.entity"
@@ -78,10 +78,10 @@ export class MetricsService {
         }
     }
 
-    async findValidConversation(phoneNumberId: string, userId: string): Promise<Conversation | null> {
+    async findValidConversation(phoneNumberId: string, userId: string, conversationType: string): Promise<Conversation | null> {
         try {
             return await this.conversationRepo.findOne({
-                where: { userId, phoneNumberId }
+                where: { userId, phoneNumberId, type: conversationType }
             })
         } catch (error) {
             this.logger.warn("Failed to find valid conversation.", error)

@@ -9,4 +9,10 @@ export class CreateDocumentDto {
     
     @IsString()
     description: string
+
+    @IsString()
+    filename: string;
+    
+    @IsString()
+    mimetype: string;
 }

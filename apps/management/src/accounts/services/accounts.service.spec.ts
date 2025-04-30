@@ -6,7 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Invitation } from '../entities/invitation.entity';
 import { Account } from '../entities/account.entity';
-import { MgntRmqClient } from '@lib/thuso-common';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 describe('AccountsService', () => {
   let service: AccountsService;
@@ -32,7 +32,7 @@ describe('AccountsService', () => {
                   useValue: {}
                 },
                 {
-                  provide: MgntRmqClient,
+                  provide: ThusoClientProxiesService,
                   useValue: {}
                 },
                 {

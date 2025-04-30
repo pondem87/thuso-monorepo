@@ -1,12 +1,33 @@
-import { IsString, IsUUID } from "class-validator"
+import { Type } from "class-transformer"
+import { IsArray, IsOptional, IsString, ValidateNested } from "class-validator"
 
 export class CreateProductDto {
-    @IsUUID()
-    businessProfile: string
+    @IsString()
+    businessProfileId: string
 
     @IsString()
     name: string
 
     @IsString()
-    description: string
+    shortDescription: string
+
+    @IsString()
+    fullDetails: string
+
+    @IsString()
+    price: string
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductMediaDto)
+    media?: ProductMediaDto[];
+}
+
+export class ProductMediaDto {
+    @IsString()
+    filename: string;
+
+    @IsString()
+    mimetype: string;
 }

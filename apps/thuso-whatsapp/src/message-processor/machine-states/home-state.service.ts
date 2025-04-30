@@ -2,10 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { ClientProxy } from "@nestjs/microservices";
 import { LoggingService } from "@lib/logging";
-import { MainMenuItems, WhatsappRmqClient } from "@lib/thuso-common";
+import { MainMenuItems } from "@lib/thuso-common";
 import { ISMContext, ISMEventType } from "../state-machines/interactive.state-machine.provider";
 import { LLMQueueService } from "../services/llm-queue.service";
 import { sendTextMessage } from "./shared";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 @Injectable()
 export class HomeStateService {
@@ -14,8 +15,7 @@ export class HomeStateService {
     constructor (
         private readonly loggingService: LoggingService,
         private readonly llmQueueService: LLMQueueService,
-        @Inject(WhatsappRmqClient)
-        private readonly whatsappQueueClient: ClientProxy
+        private readonly clientsService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "message-processor",
@@ -47,14 +47,14 @@ export class HomeStateService {
                             case MainMenuItems[1].id:
                                 return { type: "promotions" }
                             case MainMenuItems[2].id:
-                                sendTextMessage(context, this.whatsappQueueClient, `Sorry, this menu option (${MainMenuItems[1].title}) is still under development.`)
+                                sendTextMessage(context, this.clientsService, `Sorry, this menu option (${MainMenuItems[1].title}) is still under development.`)
                                 return {type: "nochange"}
                             default:
                         }
                     default:
                 }
             default:
-                sendTextMessage(context, this.whatsappQueueClient, `Sorry, the type of message you sent is either not supported or invalid menu selection.`)
+                sendTextMessage(context, this.clientsService, `Sorry, the type of message you sent is either not supported or invalid menu selection.`)
                 return {type: "nochange"}
         }
     }

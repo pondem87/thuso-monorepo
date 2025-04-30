@@ -8,9 +8,10 @@ import { ConfigService } from '@nestjs/config';
 import { ProductsApiController } from './controllers/products.api.controller';
 import { ThusoCommonModule } from '@lib/thuso-common';
 import { ProductsApiService } from './services/products.api.service';
+import { ProductMedia } from './entities/product-media.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product]), LoggingModule, ThusoCommonModule],
+  imports: [TypeOrmModule.forFeature([ProductMedia, Product]), LoggingModule, ThusoCommonModule],
   controllers: [ProductsController, ProductsApiController],
   providers: [ProductsService, ProductsApiService, ConfigService],
   exports: [TypeOrmModule]

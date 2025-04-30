@@ -1,9 +1,10 @@
 import { LoggingService } from "@lib/logging"
-import { SendEmailEventPattern, SendEmailQueueMessage } from "@lib/thuso-common"
+import { AccountDataUpdatePayload, AccountUpdateAccountsPattern, SendEmailEventPattern, SendEmailQueueMessage, UserDataUpdatePayload, UserUpdateAccountsPattern } from "@lib/thuso-common"
 import { Controller } from "@nestjs/common"
 import { Logger } from "winston"
 import { AccountsApiService } from "../services/accounts.api.service"
 import { Ctx, MessagePattern, Payload, RmqContext } from "@nestjs/microservices"
+import { AccountsRmqService } from "../services/accounts.rmq.service"
 
 
 @Controller('rmq/accounts')
@@ -12,7 +13,8 @@ export class AccountsRmqController {
 
     constructor (
         private readonly loggingService: LoggingService,
-        private readonly accountsApiService: AccountsApiService
+        private readonly accountsApiService: AccountsApiService,
+        private readonly accountsRmqService: AccountsRmqService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "accounts",
@@ -28,5 +30,19 @@ export class AccountsRmqController {
         @Ctx() ctx: RmqContext
     ) {
         return this.accountsApiService.sendEmail(data, ctx)
+    }
+
+    @MessagePattern(AccountUpdateAccountsPattern)
+    processAccountUpdate(
+        @Payload() data: AccountDataUpdatePayload
+    ) {
+        return this.accountsRmqService.processAccountUpdate(data)
+    }
+
+    @MessagePattern(UserUpdateAccountsPattern)
+    processUserUpdate(
+        @Payload() data: UserDataUpdatePayload
+    ) {
+        return this.accountsRmqService.processUserUpdate(data)
     }
 }

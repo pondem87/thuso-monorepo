@@ -5,7 +5,7 @@ import { Logger } from 'winston';
 import { MessengerWhatsAppBusiness } from '../entities/whatsapp-business.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { isDateLessThanHoursOld } from '@lib/thuso-common';
+import { AccountDataUpdatePayload, BusinessProfileUpdatePayload, isDateLessThanHoursOld, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
 import { MessengerAccount } from '../entities/account.entity';
 
 @Injectable()
@@ -44,7 +44,7 @@ export class WhatsAppBusinessService {
                     wabaToken: busInfo.wabaToken,
                     profileName: busInfo.businessProfile?.name,
                     tagLine: busInfo.businessProfile?.tagline,
-                    account 
+                    account
                 })
             )
         } else if (!isDateLessThanHoursOld(business.updatedAt, parseInt(this.configService.get<string>("MESSENGER_BUSINESS_DATA_DURATION_HOURS")) || 2) || !business.profileName) {
@@ -53,8 +53,8 @@ export class WhatsAppBusinessService {
 
             business.wabaId = busInfo.wabaId
             business.wabaToken = busInfo.wabaToken
-            business.profileName = busInfo.businessProfile?.name,
-            business.tagLine = busInfo.businessProfile?.tagline,
+            business.profileName = busInfo.businessProfile?.name
+            business.tagLine = busInfo.businessProfile?.tagline
 
             business = await this.whatsAppBusinessRepo.save(business)
         }
@@ -146,6 +146,103 @@ export class WhatsAppBusinessService {
         } catch (error) {
             this.logger.error("Failed to get account by wabaId", { wabaId, error })
             return null
+        }
+    }
+
+    async processProfileUpdate(data: BusinessProfileUpdatePayload) {
+        try {
+            const wabaId = data.businessProfileData.waba?.id
+            if (!wabaId) return
+
+            let business = await this.whatsAppBusinessRepo.findOne({ where: { wabaId } })
+
+            if (!business) {
+                const busInfo = data.businessProfileData.waba
+                busInfo.businessProfile = data.businessProfileData
+
+                const account = await this.getAccountInfo(busInfo.accountId)
+                if (!account) return
+
+                business = await this.whatsAppBusinessRepo.save(
+                    this.whatsAppBusinessRepo.create({
+                        wabaId: busInfo.wabaId,
+                        wabaToken: busInfo.wabaToken,
+                        profileName: busInfo.businessProfile?.name,
+                        tagLine: busInfo.businessProfile?.tagline,
+                        account
+                    })
+                )
+            } else {
+                const busInfo = data.businessProfileData.waba
+                busInfo.businessProfile = data.businessProfileData
+                
+                business.wabaId = busInfo.wabaId
+                business.wabaToken = busInfo.wabaToken
+                business.profileName = busInfo.businessProfile?.name
+                business.tagLine = busInfo.businessProfile?.tagline
+
+                business = await this.whatsAppBusinessRepo.save(business)
+            }
+        } catch (error) {
+            this.logger.error("Error processing business profile update message")
+        }
+    }
+
+    async processBusinessUpdate(data: WhatsAppBusinessUpdatePayload) {
+        try {
+            let business = await this.whatsAppBusinessRepo.findOne({ where: { wabaId: data.businessData.wabaId } })
+
+            if (!business) {
+                const busInfo = data.businessData
+
+                const account = await this.getAccountInfo(busInfo.accountId)
+                if (!account) return
+
+                business = await this.whatsAppBusinessRepo.save(
+                    this.whatsAppBusinessRepo.create({
+                        wabaId: busInfo.wabaId,
+                        wabaToken: busInfo.wabaToken,
+                        profileName: busInfo.businessProfile?.name,
+                        tagLine: busInfo.businessProfile?.tagline,
+                        account
+                    })
+                )
+            } else {
+                const busInfo = data.businessData
+
+                business.wabaId = busInfo.wabaId
+                business.wabaToken = busInfo.wabaToken
+                business.profileName = busInfo.businessProfile?.name
+                business.tagLine = busInfo.businessProfile?.tagline
+
+                business = await this.whatsAppBusinessRepo.save(business)
+            }
+
+        } catch (error) {
+            this.logger.error("Error processing business update message")
+        }
+    }
+
+    async processAccountUpdate(data: AccountDataUpdatePayload) {
+        try {
+            const account = await this.accountRepo.findOneBy({ id: data.accountData.id })
+
+            if (!account) {
+                await this.accountRepo.save(
+                    this.accountRepo.create({
+                        ...data.accountData
+                    })
+                )
+            } else {
+                account.id = data.accountData.id
+                account.maxAllowedDailyConversations = data.accountData.maxAllowedDailyConversations
+                account.disabled = data.accountData.disabled
+                account.subscriptionEndDate = data.accountData.subscriptionEndDate
+
+                await this.accountRepo.save(account)
+            }
+        } catch (error) {
+            this.logger.error("Error processing account update message")
         }
     }
 }

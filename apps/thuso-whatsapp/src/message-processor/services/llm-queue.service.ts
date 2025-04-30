@@ -1,7 +1,7 @@
 import { LoggingService } from "@lib/logging";
-import { Contact, LLMEventPattern, LLMQueueMessage, LlmRmqClient, Metadata } from "@lib/thuso-common";
-import { Inject, Injectable } from "@nestjs/common";
-import { ClientProxy } from "@nestjs/microservices";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
+import { Contact, LLMEventPattern, LLMQueueMessage, Metadata } from "@lib/thuso-common";
+import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 
 @Injectable()
@@ -10,8 +10,7 @@ export class LLMQueueService {
 
     constructor (
         private readonly loggingService: LoggingService,
-        @Inject(LlmRmqClient)
-        private readonly llmQueueClient: ClientProxy
+        private readonly clientsService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "message-processor",
@@ -29,7 +28,7 @@ export class LLMQueueService {
             prompt
         }
 
-        this.llmQueueClient.emit(
+        this.clientsService.emitLlmQueue(
             LLMEventPattern,
             payload
         )

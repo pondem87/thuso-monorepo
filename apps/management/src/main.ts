@@ -2,21 +2,27 @@ import { NestFactory } from '@nestjs/core';
 import { ManagementModule } from './management.module';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 	const app = await NestFactory.create(ManagementModule);
 	const configService = app.get<ConfigService>(ConfigService)
 
+	app.useGlobalPipes(new ValidationPipe())
+
+	// This is a direct queue to management
 	app.connectMicroservice<MicroserviceOptions>({
 		transport: Transport.RMQ,
 		options: {
 			urls: [`${configService.get<string>("THUSO_RMQ_URL")}:${configService.get<string>("THUSO_RMQ_PORT")}`],
 			queue: configService.get<string>("MANAGEMENT_RMQ_QUEUENAME"),
+			prefetchCount: parseInt(configService.get<string>("RABBITMQ_PREFETCH_COUNT")) || 5,
 			queueOptions: {
 				durable: configService.get<string>("THUSO_RMQ_IS_DURABLE") === "true" ? true : false
 			}
 		}
 	})
+
 
 	await app.startAllMicroservices()
 

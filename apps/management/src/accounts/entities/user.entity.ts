@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Account } from "./account.entity";
 import { Permission } from "./permission.entity";
+import { OnboardingState } from "@lib/thuso-common";
 
 @Entity("user")
 export class User {
@@ -27,6 +28,9 @@ export class User {
 
     @Column("varchar")
     passwordHash: string
+
+    @Column({ type: "enum", enum: OnboardingState, nullable: true })
+    onboardingState: OnboardingState | null
 
     @Column("boolean", { default: false })
     verified: boolean

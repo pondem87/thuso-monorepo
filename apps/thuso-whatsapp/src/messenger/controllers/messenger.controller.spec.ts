@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MessengerController } from './messenger.controller';
 import { MessengerService } from '../services/messenger.service';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
+import { WhatsAppBusinessService } from '../services/whatsapp-business.service';
 
 describe('MessengerController', () => {
   let controller: MessengerController;
@@ -17,6 +18,10 @@ describe('MessengerController', () => {
         {
           provide: LoggingService,
           useValue: mockedLoggingService
+        },
+        {
+          provide: WhatsAppBusinessService,
+          useValue: {}
         }
       ]
     }).compile();

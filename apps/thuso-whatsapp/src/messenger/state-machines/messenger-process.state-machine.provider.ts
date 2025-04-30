@@ -244,7 +244,8 @@ export class MessengerProcessStateMachineProvider {
 
         let conversation = await this.metricsService.findValidConversation(
             context.payload.metadata.phone_number_id,
-            context.payload.contact.wa_id
+            context.payload.contact.wa_id,
+            "service"
         )
         if (conversation != null) return conversation
 
@@ -255,6 +256,13 @@ export class MessengerProcessStateMachineProvider {
                 context.payload.metadata.phone_number_id,
                 context.payload.contact.wa_id,
                 "service"
+            )
+        } else if (input.context.payload.conversationType === "marketing") {
+            conversation = await this.metricsService.createConversation(
+                context.payload.wabaId,
+                context.payload.metadata.phone_number_id,
+                context.payload.contact.wa_id,
+                "marketing"
             )
         }
 

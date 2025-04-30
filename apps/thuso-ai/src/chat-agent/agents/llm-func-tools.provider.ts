@@ -5,7 +5,8 @@ import { z } from "zod"
 import { EmbeddingMetadata } from "../../embedding/vector-store.provider";
 import { EmbeddingService } from "../../embedding/embedding.service";
 import { LoggingService } from "@lib/logging";
-import { Contact } from "@lib/thuso-common";
+import { Contact, RegisterCustomerEventPayload, RegisterCustomerToCRMEventPattern } from "@lib/thuso-common";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 @Injectable()
 export class LLMFuncToolsProvider {
@@ -13,7 +14,8 @@ export class LLMFuncToolsProvider {
 
     constructor(
         private readonly loggingService: LoggingService,
-        private readonly embeddingService: EmbeddingService
+        private readonly embeddingService: EmbeddingService,
+        private readonly clientsService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "llm-tools",
@@ -23,10 +25,11 @@ export class LLMFuncToolsProvider {
         this.logger.info("Initializing LLMToolsProvider")
     }
 
-    getTools(contact: Contact, businessProfileId: string): DynamicStructuredTool[] {
+    getTools(contact: Contact, accountId: string, businessProfileId: string): DynamicStructuredTool[] {
         return [
             this.searchCompanyDocumentsTool({ businessProfileId }),
-            this.applicationActionsTool()
+            this.applicationActionsTool(),
+            this.saveCustomerDataTool(contact, accountId)
         ]
     }
 
@@ -56,6 +59,36 @@ export class LLMFuncToolsProvider {
             },
             schema: z.object({
                 searchQuery: z.string().describe("Prompt to use for similarity search"),
+            })
+        })
+    }
+
+    saveCustomerDataTool(contact: Contact, accountId: string): DynamicStructuredTool {
+        return new DynamicStructuredTool({
+            name: "save-customer-data-tool",
+            description: "Save customer data for service optimisation.",
+            func: async (input) => {
+
+                this.logger.debug("Called save customer data function.", { input })
+                this.clientsService.emitMgntQueue(
+                    RegisterCustomerToCRMEventPattern,
+                    {
+                        accountId,
+                        ...input,
+                        whatsAppNumber: contact.wa_id
+                    } as RegisterCustomerEventPayload
+                )
+                return "Customer data sent to CRM, status will update shortly."
+            },
+            schema: z.object({
+                forenames: z.string().describe("Customer's given names"),
+                surname: z.string().describe("Customer's family name"),
+                streetAd: z.string().optional().describe("Street address of the customer (optional)"),
+                city: z.string().describe("City where the customer resides"),
+                country: z.string().describe("Country where the customer resides"),
+                age: z.number().describe("Age of the customer in years"),
+                gender: z.enum(['male', 'female']).describe("Gender of the customer"),
+                email: z.string().email().optional().describe("Email address of the customer (optional)")
             })
         })
     }

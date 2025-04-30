@@ -1,11 +1,11 @@
 import { LoggingService } from "@lib/logging"
 import { CHAR_LIMITS, cropTextToLength, GraphAPIService, InteractiveList, InteractiveReplyButtons, MessengerEventPattern, MessengerRMQMessage, WHATSAPP_DOCS_MIMETYPES, WHATSAPP_IMAGES_MIMETYPES, WhatsappRmqClient } from "@lib/thuso-common"
-import { Inject, Injectable } from "@nestjs/common"
-import { ClientProxy } from "@nestjs/microservices"
+import { Injectable } from "@nestjs/common"
 import { Logger } from "winston"
 import { ISMContext, ISMEventType } from "../state-machines/interactive.state-machine.provider"
 import { ConfigService } from "@nestjs/config"
 import { sendInteractiveReplyButtonsMessage, sendListMessage, sendTextMessage } from "./shared"
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies"
 
 @Injectable()
 export class ProductsStateService {
@@ -13,8 +13,7 @@ export class ProductsStateService {
 
     constructor(
         private readonly loggingService: LoggingService,
-        @Inject(WhatsappRmqClient)
-        private readonly whatsappQueueClient: ClientProxy,
+        private readonly clientsService: ThusoClientProxiesService,
         private readonly configService: ConfigService,
         private readonly graphAPIService: GraphAPIService
     ) {
@@ -33,7 +32,7 @@ export class ProductsStateService {
         const current = (skip / context.productsNav.take) + 1
         const pages = Math.ceil(total / context.productsNav.take)
 
-        sendListMessage(context, this.whatsappQueueClient, this.compileInteractiveList(context, products, current, pages))
+        sendListMessage(context, this.clientsService, this.compileInteractiveList(context, products, current, pages))
     }
 
     executeProductsMenuItem = async ({ context }: { context: ISMContext }): Promise<ISMEventType> => {
@@ -56,7 +55,7 @@ export class ProductsStateService {
                                 const nCurrent = (nSkip / context.productsNav.take) + 1
                                 const nPages = Math.ceil(nextTotal / context.productsNav.take)
 
-                                sendListMessage(context, this.whatsappQueueClient, this.compileInteractiveList(context, nextProducts, nCurrent, nPages))
+                                sendListMessage(context, this.clientsService, this.compileInteractiveList(context, nextProducts, nCurrent, nPages))
 
                                 return { type: "navigateProducts", nav: { skip: nSkip, take: context.productsNav.take, current: nCurrent, pages: nPages } }
                             case productsMenuItems[1].id:
@@ -66,21 +65,21 @@ export class ProductsStateService {
                                 const pCurrent = (pSkip / context.productsNav.take) + 1
                                 const pPages = Math.ceil(prevTotal / context.productsNav.take)
 
-                                sendListMessage(context, this.whatsappQueueClient, this.compileInteractiveList(context, prevProducts, pCurrent, pPages))
+                                sendListMessage(context, this.clientsService, this.compileInteractiveList(context, prevProducts, pCurrent, pPages))
 
                                 return { type: "navigateProducts", nav: { skip: pSkip, take: context.productsNav.take, current: pCurrent, pages: pPages } }
                             case productsMenuItems[1].id:
-                                sendTextMessage(context, this.whatsappQueueClient, "You have exited the products menu.")
+                                sendTextMessage(context, this.clientsService, "You have exited the products menu.")
                                 return { type: "exitProducts" }
                             default:
                                 const product = await this.fetchProduct(context, message.interactive.list_reply.id)
                                 if (product) {
-                                    sendInteractiveReplyButtonsMessage(context, this.whatsappQueueClient, await this.compileProductMessage(context, product))
+                                    sendInteractiveReplyButtonsMessage(context, this.clientsService, await this.compileProductMessage(context, product))
                                     return { type: "viewProduct", productId: product.id }
                                 }
                         }
                     default:
-                        sendTextMessage(context, this.whatsappQueueClient, `Sorry, the message you sent is not valid. Select an option from Products Menu.`)
+                        sendTextMessage(context, this.clientsService, `Sorry, the message you sent is not valid. Select an option from Products Menu.`)
                         return { type: "nochange" }
                 }
 
@@ -93,7 +92,7 @@ export class ProductsStateService {
                     conversationType: "service",
                     text: `Sorry, the message type is not supported.`
                 }
-                this.whatsappQueueClient.emit(
+                this.clientsService.emitWhatsappQueue(
                     MessengerEventPattern,
                     messageDefaultMessage
                 )
@@ -119,7 +118,7 @@ export class ProductsStateService {
                                 if (product) {
                                     sendTextMessage(
                                         context,
-                                        this.whatsappQueueClient,
+                                        this.clientsService,
                                         `*${product.name}*\n${product.fullDetails}\n\n*Price: ${product.price}*`
                                     )
                                     return { type: "navigateProducts", nav: context.productsNav }
