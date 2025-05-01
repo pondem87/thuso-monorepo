@@ -10,7 +10,7 @@ COPY ./package.json ./
 # Install dependencies in production mode
 RUN npm install
 
-COPY ./dist/apps ./apps
+COPY ./dist ./
 
 COPY ./ssl ./ssl
 
