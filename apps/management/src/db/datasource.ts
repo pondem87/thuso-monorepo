@@ -13,8 +13,8 @@ export default new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: `${process.env.DB_DATABASE}-management`,
-    entities: ['dist/apps/management/src/**/*.entity.js'],
-    migrations: ['dist/apps/management/src/migrations/*.js'],
+    entities: [`${process.env.APPS_FOLDER}/management/src/**/*.entity.js`],
+    migrations: [`${process.env.APPS_FOLDER}/management/src/migrations/*.js`],
     migrationsRun: true,
     synchronize: false,
     extra: {

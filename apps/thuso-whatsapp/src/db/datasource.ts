@@ -13,8 +13,8 @@ export default new DataSource({
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: `${process.env.DB_DATABASE}-whatsapp`,
-    entities: ['dist/apps/thuso-whatsapp/src/**/*.entity.js'],
-    migrations: ['dist/apps/thuso-whatsapp/src/migrations/*.js'],
+    entities: [`${process.env.APPS_FOLDER}/thuso-whatsapp/src/**/*.entity.js`],
+    migrations: [`${process.env.APPS_FOLDER}/thuso-whatsapp/src/migrations/*.js`],
     migrationsRun: true,
     synchronize: false,
     extra: {
