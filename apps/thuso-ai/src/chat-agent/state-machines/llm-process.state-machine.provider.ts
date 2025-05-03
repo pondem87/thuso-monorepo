@@ -62,13 +62,6 @@ export class LLMProcessStateMachineProvider {
             + `Always refer to business documents for more detailed information using the document search tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS!`
             + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.\n\n`;
 
-        const compiledGraph = this.langGraphAgentProvider.getAgent(
-            "gpt-4o-mini",
-            sysMsgTxt,
-            handler,
-            this.llmFuncToolsProvider.getTools(input.context.contact, businessProfile.accountId, businessProfile.profileId)
-        )
-
         const chatMessageHistory = await this.chatMessageHistoryProvider.getChatMessageHistory({
             wabaId: input.context.wabaId,
             userId: input.context.contact.wa_id,
@@ -77,8 +70,15 @@ export class LLMProcessStateMachineProvider {
 
         // if user not in crm alter the prompt
         if (!chatMessageHistory.getChatHistory().crmId) {
-            sysMsgTxt + `This is a new custor. You should ask for information including "forenames, surname, street address, city, country, age, gender, email" and pass it to the save-customer-data tool for the purposes of improving customer service`
+            sysMsgTxt + `This is a new customer. You should ask for information including "forenames, surname, street address, city, country, age, gender, email" and pass it to the save-customer-data tool for the purposes of improving customer service`
         }
+
+        const compiledGraph = this.langGraphAgentProvider.getAgent(
+            "gpt-4o-mini",
+            sysMsgTxt,
+            handler,
+            this.llmFuncToolsProvider.getTools(input.context.contact, businessProfile.accountId, businessProfile.profileId)
+        )
 
         const finalState = await compiledGraph.invoke({
             messages: [new HumanMessage(input.context.prompt)]
