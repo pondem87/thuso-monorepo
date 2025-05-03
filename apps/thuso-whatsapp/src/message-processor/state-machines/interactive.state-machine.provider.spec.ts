@@ -223,9 +223,16 @@ describe('MessageProcessorService', () => {
                 name: "Thuso",
                 shortDescription: "Your AI chatbot",
                 fullDetails: "A lot of text here",
-                mimetype: "",
-                s3key: "",
-                price: "",
+                media: [
+                    {
+                        id: uuidv4(),
+                        accountId: businessProfile.accountId,
+                        mimetype: "image/png",
+                        filename: "filename.jpg",
+                        s3key: "my-s3-key"
+                    }
+                ],
+                price: "P30",
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 id: uuidv4()
@@ -355,8 +362,15 @@ describe('MessageProcessorService', () => {
                 name: "Thuso",
                 shortDescription: "Your AI chatbot",
                 fullDetails: "A lot of text here",
-                mimetype: "image/jpeg",
-                s3key: "some-s3-key",
+                media: [
+                    {
+                        id: uuidv4(),
+                        accountId: businessProfile.accountId,
+                        mimetype: "image/jpeg",
+                        filename: "filename.jpg",
+                        s3key: "some-s3-key"
+                    }
+                ],
                 price: "",
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -386,6 +400,12 @@ describe('MessageProcessorService', () => {
                             json: () => Promise.resolve(products[0]),
                             status: 200
                         } as Response;
+                    } else if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/${businessProfile.id}/products/media-link/${products[0].media[0].s3key}`) {
+                        return {
+                            ok: true,
+                            text: () => Promise.resolve("presigned-url"),
+                            status: 200
+                        } as Response
                     } else {
                         return {
                             ok: false,
@@ -478,8 +498,8 @@ describe('MessageProcessorService', () => {
         expect(graphAPIService.uploadMedia).toHaveBeenCalledWith(
             businessInfo.wabaToken,
             metadata.phone_number_id,
-            products[0].mimetype,
-            `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/management/documents/download/${products[0].s3key}`
+            products[0].media[0].mimetype,
+            `presigned-url`
         )
 
         expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(2)

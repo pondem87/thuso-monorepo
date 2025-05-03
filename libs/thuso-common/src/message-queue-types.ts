@@ -19,10 +19,20 @@ export type MessengerRMQMessage = {
     wabaId: string
     metadata: Metadata
     contact: Contact
-    type: "image" | "document" | "audio" | "video"
+    type: "image"
     mediaLink: string
     mimetype: string
     caption: string
+    conversationType: "marketing" | "utility" | "authentication" | "service"
+} | {
+    wabaId: string
+    metadata: Metadata
+    contact: Contact
+    type: "document"
+    mediaLink: string
+    mimetype: string
+    caption: string
+    filename: string
     conversationType: "marketing" | "utility" | "authentication" | "service"
 } | {
     wabaId: string

@@ -2,7 +2,7 @@ import { LoggingService } from "@lib/logging";
 import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { assign, createActor, fromPromise, setup } from "xstate";
-import { GraphAPIService, ImageMessageBody, InteractiveListMessageBody, MainMenuItems, MessageBody, MessengerRMQMessage, StateMachineActor, TextMessageBody } from "@lib/thuso-common";
+import { DocumentMessageBody, GraphAPIService, ImageMessageBody, InteractiveListMessageBody, MainMenuItems, MessageBody, MessengerRMQMessage, StateMachineActor, TextMessageBody } from "@lib/thuso-common";
 import { Conversation } from "../entities/conversation.entity";
 import { MessengerWhatsAppBusiness } from "../entities/whatsapp-business.entity";
 import { MetricsService } from "../services/metrics.service";
@@ -203,6 +203,32 @@ export class MessengerProcessStateMachineProvider {
                 })
 
                 return imgMsgBody
+
+            case "document":
+
+                const docLink = context.payload.mediaLink
+                const docMimetype = context.payload.mimetype
+
+                const docMessageBody: DocumentMessageBody[] = []
+
+                docMessageBody.push({
+                    messaging_product: "whatsapp",
+                    recipient_type: "individual",
+                    to: context.payload.contact.wa_id,
+                    type: "document",
+                    document: {
+                        id: await this.graphApiService.uploadMedia(
+                            context.whatsAppBusiness.wabaToken,
+                            context.payload.metadata.phone_number_id,
+                            docMimetype,
+                            docLink
+                        ),
+                        caption: context.payload.caption,
+                        filename: context.payload.filename
+                    }
+                })
+
+                return docMessageBody
 
             case "message-body":
                 const anyMessageBody: MessageBody[] = []

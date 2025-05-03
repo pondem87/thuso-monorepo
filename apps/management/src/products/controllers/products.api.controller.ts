@@ -38,4 +38,11 @@ export class ProductsApiController {
     ) {
         return this.productsApiService.getProductForView(profileId, id)
     }
+
+    @Get("media-link/:s3key")
+    getMediaLink(
+        @Param('s3key') s3key: string
+    ) {
+        return this.productsApiService.getMediaLink(s3key)
+    }
 }

@@ -341,7 +341,7 @@ export interface InteractiveListMessageBody {
 
 
 // Interactive reply button message
-interface ReplyButton {
+export interface ReplyButton {
     type: "reply"
     reply: {
         id: string
@@ -460,9 +460,25 @@ export interface ImageMessageBody {
     }
 }
 
+export interface DocumentMessageBody {
+    messaging_product: MessagingProduct
+    recipient_type: RecipientType
+    to: string
+    type: "document",
+    document: {
+        id: string
+        caption: string
+        filename: string
+    } | {
+        link: string
+        caption: string
+        filename: string
+    }
+}
+
 // messageBody
 export type MessageBody = TemplateMessageBody | InteractiveReplyButtonsMessageBody | InteractiveListMessageBody
-    | TextMessageBody | ImageMessageBody
+    | TextMessageBody | ImageMessageBody | DocumentMessageBody
 
 
 // endpoint response
