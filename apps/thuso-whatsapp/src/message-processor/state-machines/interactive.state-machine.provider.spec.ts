@@ -400,7 +400,7 @@ describe('MessageProcessorService', () => {
                             json: () => Promise.resolve(products[0]),
                             status: 200
                         } as Response;
-                    } else if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/${businessProfile.id}/products/media-link/${products[0].media[0].s3key}`) {
+                    } else if (input === `http://MANAGEMENT_SERVER_URL:MANAGEMENT_SERVER_PORT/api/${businessProfile.id}/products/media-link`) {
                         return {
                             ok: true,
                             text: () => Promise.resolve("presigned-url"),

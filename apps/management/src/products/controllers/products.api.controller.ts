@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
 import { ApiAuthGuard } from '@lib/thuso-common';
@@ -39,9 +39,9 @@ export class ProductsApiController {
         return this.productsApiService.getProductForView(profileId, id)
     }
 
-    @Get("media-link/:s3key")
+    @Post("media-link")
     getMediaLink(
-        @Param('s3key') s3key: string
+        @Body() { s3key }: { s3key: string }
     ) {
         return this.productsApiService.getMediaLink(s3key)
     }

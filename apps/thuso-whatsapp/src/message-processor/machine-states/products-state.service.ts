@@ -133,12 +133,14 @@ export class ProductsStateService {
                                             context,
                                             this.clientsService,
                                             await (await fetch(
-                                                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${product2.businessProfileId}/products/media-link/${media.s3key}`,
+                                                `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${product2.businessProfileId}/products/media-link`,
                                                 {
-                                                    method: "GET",
+                                                    method: "POST",
                                                     headers: {
-                                                        'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`
-                                                    }
+                                                        'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({ s3key: media.s3key })
                                                 }
                                             )).text(),
                                             media
@@ -326,12 +328,14 @@ export class ProductsStateService {
                 context.metadata.phone_number_id,
                 media.mimetype,
                 await (await fetch(
-                    `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${product.businessProfileId}/products/media-link/${media.s3key}`,
+                    `http://${this.configService.get<string>("MANAGEMENT_SERVER_URL")}:${this.configService.get<string>("MANAGEMENT_SERVER_PORT")}/api/${product.businessProfileId}/products/media-link`,
                     {
-                        method: "GET",
+                        method: "POST",
                         headers: {
-                            'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`
-                        }
+                            'Authorization': `Bearer ${this.configService.get<string>("THUSO_S2S_TOKEN")}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ s3key: media.s3key })
                     }
                 )).text()
             )
