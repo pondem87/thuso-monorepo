@@ -1,60 +1,96 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ThusoAiModule } from '../../src/thuso-ai.module';
-import { CreateEmbeddingDto } from '../../src/embedding/dto/create-embedding.dto';
-import { EmbeddingController } from '../../src/embedding/embedding.controller';
-import { EmbeddingService } from '../../src/embedding/embedding.service';
-import { LONG_TEST_TIMEOUT } from '@lib/thuso-common';
+import { LLMQueueMessage, LONG_TEST_TIMEOUT, MessengerEventPattern, RegisterCustomerToCRMEventPattern } from '@lib/thuso-common';
+import { ChatAgentController } from '../../src/chat-agent/chat-agent.controller';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { BusinessProfileService } from '../../src/chat-agent/services/business-profile.service';
+import { ChatMessageHistoryProvider } from '../../src/chat-agent/chat-message-history/chat-message-history-provider';
+import AppDataSource from '../../src/db/datasource'
+import { TypeOrmModule } from '@nestjs/typeorm';
+import e from 'express';
 
 describe('ThusoAiController (e2e)', () => {
     let app: INestApplication;
-    let embeddingController: EmbeddingController
-    let embeddingService: EmbeddingService
+    let chatAgentController: ChatAgentController
+
+    const clientProxy = {
+        emitWhatsappQueue: jest.fn(),
+        emitMgntQueue: jest.fn()
+    }
+
+    const businessProfileService = {
+        getBusinessProfileByWabaId: null
+    }
+
+    const chatMessageHistoryProvider = {
+        getChatMessageHistory: null
+    }
 
     beforeEach(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [ThusoAiModule],
-        }).compile();
+            imports: [
+                TypeOrmModule.forRootAsync({
+                    useFactory: () => ({
+                        ...AppDataSource.options,
+                        autoLoadEntities: true,
+                        entities: undefined,
+                        migrations: undefined
+                    })
+                }),
+                ThusoAiModule
+            ],
+        })
+            .overrideProvider(ThusoClientProxiesService).useValue(clientProxy)
+            .overrideProvider(BusinessProfileService).useValue(businessProfileService)
+            .overrideProvider(ChatMessageHistoryProvider).useValue(chatMessageHistoryProvider)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         await app.init();
 
-        embeddingController = moduleFixture.get<EmbeddingController>(EmbeddingController)
-        embeddingService = moduleFixture.get<EmbeddingService>(EmbeddingService)
+        chatAgentController = moduleFixture.get<ChatAgentController>(ChatAgentController)
     }, LONG_TEST_TIMEOUT);
 
-    it('create retrieve and delete embeddings', async () => {
-        const dto: CreateEmbeddingDto = {
-            documentId: "dfc114db-b440-4c6f-92ef-7ef44f683fe3",
-            s3key: "document/6183cc2f-7259-451b-a2c6-97b963131471/UXJMALsfsQzYxGb.docx",
-            mimetype: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            businessProfileId: "BUSINESS_PROFILE_ID",
-            accountId: "ACCOUNT_ID"
+    it('call llm', async () => {
+        const payload: LLMQueueMessage = {
+            wabaId: "WABA_ID",
+            metadata: {
+                display_phone_number: "DISPLAY_PHONE_NUMBER",
+                phone_number_id: "PHONE_NUMBER_ID"
+            },
+            contact: {
+                profile: {
+                    name: "NAME"
+                },
+                wa_id: "WA_ID_2"
+            },
+            prompt: "What do you do?"
         }
 
-        await embeddingController.embedDocument(dto)
-
-        // now get similarity
-        const docs = await embeddingService.searchEmbeddings("", {
-            businessProfileId: dto.businessProfileId,
-            accountId: dto.accountId
+        businessProfileService.getBusinessProfileByWabaId = jest.fn().mockResolvedValue({
+            wabaId: payload.wabaId,
+            accountId: "ACCOUNT_ID",
+            profileId: "PROFILE_ID",
+            name: "BUSINESS_NAME",
+            tagline: "the future of computing",
+            serviceDescription: "What do you do?",
+            about: "started in 2022",
+            imageLogoId: null,
+            imageBannerId: null,
+            updatedAt: new Date()
         })
 
-        expect(docs.length > 0).toBe(true)
-        expect(docs[0].metadata.businessProfileId).toBe(dto.businessProfileId)
-
-        // now remove those embeddings
-        await embeddingController.deleteEmbedding({
-            businessProfileId: dto.businessProfileId,
-            accountId: dto.accountId
+        chatMessageHistoryProvider.getChatMessageHistory = jest.fn().mockResolvedValue({
+            getChatHistory: () => ({ crmId: null }),
+            addMessages: jest.fn(),
+            setLastMessageTime: jest.fn(),
+            addTopic: jest.fn()
         })
 
-        // get those embeddings again
-        const moreDocs = await embeddingService.searchEmbeddings("", {
-            businessProfileId: dto.businessProfileId,
-            accountId: dto.accountId
-        })
+        await chatAgentController.processMessage(payload)
 
-        expect(moreDocs.length === 0).toBe(true)
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledWith(MessengerEventPattern, expect.anything())
+
     }, LONG_TEST_TIMEOUT);
 });

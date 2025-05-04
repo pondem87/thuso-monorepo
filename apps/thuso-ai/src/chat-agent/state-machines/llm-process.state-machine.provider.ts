@@ -10,6 +10,7 @@ import { LLMFuncToolsProvider } from "../agents/llm-func-tools.provider";
 import { LLMCallbackHandler } from "../utility/llm-callback-handler";
 import { BusinessProfileService } from "../services/business-profile.service";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
+import { TokenUsageService } from "../services/token-usage.service";
 
 @Injectable()
 export class LLMProcessStateMachineProvider {
@@ -21,7 +22,8 @@ export class LLMProcessStateMachineProvider {
         private readonly llmFuncToolsProvider: LLMFuncToolsProvider,
         private readonly chatMessageHistoryProvider: ChatMessageHistoryProvider,
         private readonly clientsService: ThusoClientProxiesService,
-        private readonly businessProfileService: BusinessProfileService
+        private readonly businessProfileService: BusinessProfileService,
+        private readonly tokenUsageService: TokenUsageService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "llm-tools",
@@ -56,10 +58,10 @@ export class LLMProcessStateMachineProvider {
             return { handler }
         }
 
-        const sysMsgTxt =
-            `You are a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
+        let sysMsgTxt =
+            `You are Thuso, a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
             + `\n\nCompany Information: ${businessProfile.serviceDescription}\nTagline: ${businessProfile.tagline}\nAbout: ${businessProfile.about}\n\n`
-            + `Always refer to business documents for more detailed information using the document search tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS!`
+            + `Always refer to business documents for more detailed information using the document-search-tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS! `
             + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.\n\n`;
 
         const chatMessageHistory = await this.chatMessageHistoryProvider.getChatMessageHistory({
@@ -70,11 +72,11 @@ export class LLMProcessStateMachineProvider {
 
         // if user not in crm alter the prompt
         if (!chatMessageHistory.getChatHistory().crmId) {
-            sysMsgTxt + `This is a new customer. You should ask for information including "forenames, surname, street address, city, country, age, gender, email" and pass it to the save-customer-data tool for the purposes of improving customer service`
+            sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, Street address, City, Country, Age, Gender, Email. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, address, age, gender, and email?" Then, save this information using the save-customer-data-tool.`
         }
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(
-            "gpt-4o-mini",
+            "gpt-4.1-mini",
             sysMsgTxt,
             handler,
             this.llmFuncToolsProvider.getTools(input.context.contact, businessProfile.accountId, businessProfile.profileId)
@@ -82,7 +84,7 @@ export class LLMProcessStateMachineProvider {
 
         const finalState = await compiledGraph.invoke({
             messages: [new HumanMessage(input.context.prompt)]
-        }, { configurable: { thread_id: input.context.contact.wa_id } })
+        }, { configurable: { thread_id: `${input.context.contact.wa_id}+${input.context.metadata.phone_number_id}` } })
 
         await chatMessageHistory.addMessages([
             new HumanMessage(input.context.prompt),
@@ -135,6 +137,8 @@ export class LLMProcessStateMachineProvider {
 
     updateUsageStats = async ({ input }: { input: { context: LPSContext } }): Promise<void> => {
         const usage = input.context.llmCallbackHandler.getUsage()
+        this.logger.debug("Calling addUsedTokens function", usage)
+        await this.tokenUsageService.addUsedTokens(input.context.wabaId, usage)
     }
 
     private setUpStateMachine() {
@@ -216,7 +220,7 @@ export type LPSContext = {
     contact: Contact;
     prompt: string;
     error?: any;
-    llmCallbackHandler?: LLMCallbackHandler
+    llmCallbackHandler?: LLMCallbackHandler,
 }
 
 export type LPSInput = {

@@ -2,6 +2,11 @@
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { LLMResult } from "@langchain/core/outputs";
 
+export type LlmTokenUsage = {
+    inputTokens: number,
+    outputTokens: number
+}
+
 export class LLMCallbackHandler extends BaseCallbackHandler {
     name = "llm-cb-handler"
     private inputTokens: number
@@ -18,7 +23,7 @@ export class LLMCallbackHandler extends BaseCallbackHandler {
         this.outputTokens += parseInt(output.llmOutput.tokenUsage.completionTokens) || 0
     }
 
-    getUsage() {
+    getUsage(): LlmTokenUsage {
         return {
             inputTokens: this.inputTokens,
             outputTokens: this.outputTokens

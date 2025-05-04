@@ -176,11 +176,7 @@ export class LangGraphAgentProvider {
                 You are to format the response according to the schema by figuring out if an "action" is required or plain text response
             `)
 
-            console.log("Calling formatter agent")
-
             const response = await outputModel.invoke([sysMsg, ...state.messages])
-
-            console.log(`Returning formatted output: ${JSON.stringify(response)}`)
 
             return {
                 output: response

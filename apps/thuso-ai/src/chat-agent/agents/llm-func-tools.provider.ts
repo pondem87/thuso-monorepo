@@ -86,7 +86,7 @@ export class LLMFuncToolsProvider {
                 streetAd: z.string().optional().describe("Street address of the customer (optional)"),
                 city: z.string().describe("City where the customer resides"),
                 country: z.string().describe("Country where the customer resides"),
-                age: z.number().describe("Age of the customer in years"),
+                age: z.number().optional().describe("Age of the customer in years"),
                 gender: z.enum(['male', 'female']).describe("Gender of the customer"),
                 email: z.string().email().optional().describe("Email address of the customer (optional)")
             })

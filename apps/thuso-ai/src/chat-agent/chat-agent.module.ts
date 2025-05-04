@@ -3,9 +3,6 @@ import { ChatAgentController } from './chat-agent.controller';
 import { ChatAgentService } from './chat-agent.service';
 import { LoggingModule } from '@lib/logging';
 import { EmbeddingModule } from '../embedding/embedding.module';
-import { WhatsappRmqClient } from '@lib/thuso-common';
-import { ConfigService } from '@nestjs/config';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BusinessProfile } from './entities/business-profile.entity';
 import { ChatHistory } from './entities/chat-history.entity';
@@ -20,9 +17,11 @@ import { BusinessProfileService } from './services/business-profile.service';
 import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { ChatAgentApiController } from './chat-agent.api.controller';
 import { ChatMessageHistoryApiService } from './chat-message-history/chat-message-history.api.service';
+import { TokenUsageService } from './services/token-usage.service';
+import { MonthlyTokenUsage } from './entities/monthly-token-usage.entity';
 
 @Module({
-  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, ChatTopic, ChatMessage]), ThusoClientProxiesModule],
+  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, ChatTopic, ChatMessage, MonthlyTokenUsage]), ThusoClientProxiesModule],
   controllers: [ChatAgentController, ChatAgentApiController],
   providers: [
     ChatAgentService,
@@ -33,7 +32,8 @@ import { ChatMessageHistoryApiService } from './chat-message-history/chat-messag
     ChatMessageHistoryService,
     BusinessProfileService,
     ThusoClientProxiesService,
-    ChatMessageHistoryApiService
+    ChatMessageHistoryApiService,
+    TokenUsageService
   ],
   exports: [TypeOrmModule]
 })

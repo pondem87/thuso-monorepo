@@ -11,6 +11,7 @@ import { LLMFuncToolsProvider } from "../agents/llm-func-tools.provider";
 import { MessengerEventPattern } from "@lib/thuso-common";
 import { BusinessProfileService } from "../services/business-profile.service";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
+import { TokenUsageService } from "../services/token-usage.service";
 
 describe('LLMProcessStateMachineProvider', () => {
 	let provider: LLMProcessStateMachineProvider;
@@ -124,6 +125,12 @@ describe('LLMProcessStateMachineProvider', () => {
 				{
 					provide: ConfigService,
 					useValue: mockConfigService
+				},
+				{
+					provide: TokenUsageService,
+					useValue: {
+						addUsedTokens: jest.fn()
+					}
 				}
 			],
 		}).compile();
