@@ -88,7 +88,7 @@ export class LLMFuncToolsProvider {
                 country: z.string().describe("Country where the customer resides"),
                 age: z.number().optional().describe("Age of the customer in years"),
                 gender: z.enum(['male', 'female']).describe("Gender of the customer"),
-                email: z.string().email().optional().describe("Email address of the customer (optional)")
+                email: z.string().optional().describe("Email address of the customer (optional)")
             })
         })
     }
