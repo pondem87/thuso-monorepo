@@ -66,7 +66,7 @@ export class LLMFuncToolsProvider {
     saveCustomerDataTool(contact: Contact, accountId: string): DynamicStructuredTool {
         return new DynamicStructuredTool({
             name: "save-customer-data-tool",
-            description: "Save customer data for service optimisation.",
+            description: "Save customer data for service optimisation (leave optional values undefined if not available).",
             func: async (input) => {
 
                 this.logger.debug("Called save customer data function.", { input })
@@ -86,9 +86,9 @@ export class LLMFuncToolsProvider {
                 streetAd: z.string().optional().describe("Street address of the customer (optional)"),
                 city: z.string().describe("City where the customer resides"),
                 country: z.string().describe("Country where the customer resides"),
-                age: z.number().optional().describe("Age of the customer in years"),
+                age: z.number().optional().describe("Age of the customer in years (optional)"),
                 gender: z.enum(['male', 'female']).describe("Gender of the customer"),
-                email: z.string().optional().describe("Email address of the customer (optional)")
+                email: z.string().email().optional().describe("Email address of the customer (optional)")
             })
         })
     }

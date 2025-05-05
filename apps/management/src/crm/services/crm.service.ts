@@ -76,9 +76,19 @@ export class CrmService {
 
     async processRegisterCustomer(data: RegisterCustomerEventPayload) {
         try {
+            const prefs = await this.prefsRepo.save(
+                this.prefsRepo.create({
+                    whatsAppPromo: true,
+                    whatsAppUpdates: true,
+                    emailPromo: true,
+                    emailUpdates: true
+                })
+            )
+
             const customer = await this.customerRepo.save(
                 this.customerRepo.create({
-                    ...data
+                    ...data,
+                    prefs
                 })
             )
 
