@@ -40,6 +40,6 @@ export class Account {
     @BeforeInsert()
     setSubscriptionEndDate() {
         const now = new Date();
-        this.subscriptionEndDate = new Date(now.setDate(now.getDate() + 14));
+        this.subscriptionEndDate = new Date(now.setMonth(now.getMonth() + 2));
     }
 }
