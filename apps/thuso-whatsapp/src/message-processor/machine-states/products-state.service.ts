@@ -90,7 +90,7 @@ export class ProductsStateService {
                     contact: context.contact,
                     type: "text",
                     conversationType: "service",
-                    text: `Sorry, the message type is not supported.`
+                    text: `Sorry, the message you sent is not valid. Select an option from Products Menu.`
                 }
                 this.clientsService.emitWhatsappQueue(
                     MessengerEventPattern,
