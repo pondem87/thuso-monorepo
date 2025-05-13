@@ -23,7 +23,7 @@ export class BusinessesRmqController {
     processNewCustomer(
         @Payload() payload: NewCustomerBusinessEventPayload
     ) {
-        this.logger.debug("Received payload: NewCustomerBusinessEvent", { payload })
+        this.logger.info("Received payload: NewCustomerBusinessEvent", { payload })
         return this.businessesRmqService.processNewCustomer(payload)
     }
 }
