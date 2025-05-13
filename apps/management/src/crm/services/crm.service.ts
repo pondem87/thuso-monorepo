@@ -76,6 +76,8 @@ export class CrmService {
 
     async processRegisterCustomer(data: RegisterCustomerEventPayload) {
         try {
+            this.logger.info("Registering ", { data })
+
             const prefs = await this.prefsRepo.save(
                 this.prefsRepo.create({
                     whatsAppPromo: true,
@@ -137,7 +139,6 @@ export class CrmService {
             throw new HttpException(`Error while retrieving customer list`, HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
-
 
     async editCustomer(accountId: string, id: string, dto: EditCustomerDto): Promise<Customer> {
         try {

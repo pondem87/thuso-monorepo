@@ -3,6 +3,10 @@ import { IsOptional, IsString, IsUUID } from 'class-validator';
 export class UpdateBusinessProfileDto {
     @IsOptional()
     @IsString()
+    botname?: string;
+
+    @IsOptional()
+    @IsString()
     name?: string;
 
     @IsOptional()

@@ -57,6 +57,7 @@ export class WhatsAppNumberDto {
 export class BusinessProfileDto {
     id: string
     accountId: string
+    botname: string
     name: string
     tagline: string
     serviceDescription: string
@@ -68,6 +69,7 @@ export class BusinessProfileDto {
     constructor(instance: BusinessProfile) {
         this.id = instance.id
         this.accountId = instance.accountId
+        this.botname = instance.botname
         this.name = instance.name
         this.tagline = instance.tagline
         this.serviceDescription = instance.serviceDescription

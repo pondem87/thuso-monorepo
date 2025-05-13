@@ -4,7 +4,7 @@ import { Logger } from "winston";
 import { LangGraphAgentProvider } from "../agents/langgraph-agent.provider";
 import { ChatMessageHistoryProvider } from "../chat-message-history/chat-message-history-provider";
 import { HumanMessage } from "@langchain/core/messages";
-import { Contact, MessengerEventPattern, MessengerRMQMessage, Metadata, StateMachineActor, WhatsappRmqClient } from "@lib/thuso-common";
+import { Contact, MessengerEventPattern, MessengerRMQMessage, Metadata, StateMachineActor } from "@lib/thuso-common";
 import { LoggingService } from "@lib/logging";
 import { LLMFuncToolsProvider } from "../agents/llm-func-tools.provider";
 import { LLMCallbackHandler } from "../utility/llm-callback-handler";
@@ -59,7 +59,7 @@ export class LLMProcessStateMachineProvider {
         }
 
         let sysMsgTxt =
-            `You are Thuso, a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
+            `You are ${ businessProfile?.botname ? businessProfile.botname : 'Thuso'}, a helpful customer service agent for a business named "${businessProfile.name}." Here is some basic information about the business.`
             + `\n\nCompany Information: ${businessProfile.serviceDescription}\nTagline: ${businessProfile.tagline}\nAbout: ${businessProfile.about}\n\n`
             + `Always refer to business documents for more detailed information using the document-search-tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS! `
             + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.\n\n`;
@@ -72,7 +72,7 @@ export class LLMProcessStateMachineProvider {
 
         // if user not in crm alter the prompt
         if (!chatMessageHistory.getChatHistory().crmId) {
-            sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, Street address, City, Country, Age, Gender, Email. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, address, age, gender, and email?" Then, save this information using the save-customer-data-tool (optional values should be left undefined if not provided).`
+            sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, City, Country, Age, Gender. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, age, gender, city and country?" Then, save this information using the save-customer-data-tool.`
         }
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(

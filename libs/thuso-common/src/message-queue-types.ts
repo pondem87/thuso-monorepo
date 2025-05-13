@@ -154,6 +154,7 @@ type WhatsAppBusinessData = {
 type BusinessProfileData = {
     id: string
     accountId: string
+    botname: string
     name: string
     tagline: string
     serviceDescription: string
@@ -167,12 +168,10 @@ export type RegisterCustomerEventPayload = {
     accountId: string
     forenames: string
     surname: string
-    streetAd?: string
     city: string
     country: string
     age: number
     gender: Gender
-    emai?: string
     whatsAppNumber: string
 }
 

@@ -12,6 +12,9 @@ export class BusinessProfile {
     profileId: string
 
     @Column("varchar", { nullable: true })
+    botname: string
+
+    @Column("varchar", { nullable: true })
     name: string
 
     @Column("varchar", { nullable: true })

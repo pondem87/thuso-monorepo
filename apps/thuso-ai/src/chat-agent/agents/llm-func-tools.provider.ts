@@ -66,10 +66,10 @@ export class LLMFuncToolsProvider {
     saveCustomerDataTool(contact: Contact, accountId: string): DynamicStructuredTool {
         return new DynamicStructuredTool({
             name: "save-customer-data-tool",
-            description: "Save customer data for service optimisation (leave optional values undefined if not available).",
+            description: "Save customer data for service optimisation.",
             func: async (input) => {
 
-                this.logger.debug("Called save customer data function.", { input })
+                this.logger.info("Called save customer data function.", { input })
                 this.clientsService.emitMgntQueue(
                     RegisterCustomerToCRMEventPattern,
                     {
@@ -83,12 +83,10 @@ export class LLMFuncToolsProvider {
             schema: z.object({
                 forenames: z.string().describe("Customer's given names"),
                 surname: z.string().describe("Customer's family name"),
-                streetAd: z.string().optional().describe("Street address of the customer (optional)"),
                 city: z.string().describe("City where the customer resides"),
                 country: z.string().describe("Country where the customer resides"),
-                age: z.number().optional().describe("Age of the customer in years (optional)"),
-                gender: z.enum(['male', 'female']).describe("Gender of the customer"),
-                email: z.string().email().optional().describe("Email address of the customer (optional)")
+                age: z.number().describe("Age of the customer in years"),
+                gender: z.enum(['male', 'female']).describe("Gender of the customer")
             })
         })
     }

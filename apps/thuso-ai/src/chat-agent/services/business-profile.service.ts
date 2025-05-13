@@ -38,6 +38,7 @@ export class BusinessProfileService {
                     wabaId: businessData.wabaId,
                     accountId: businessData.accountId,
                     profileId: businessData.businessProfile?.id,
+                    botname: businessData.businessProfile?.botname,
                     name: businessData.businessProfile?.name,
                     tagline: businessData.businessProfile?.tagline,
                     serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -52,6 +53,7 @@ export class BusinessProfileService {
             if (!businessData) return null
 
             businessProfile.profileId = businessData.businessProfile?.id
+            businessProfile.botname = businessData.businessProfile?.botname
             businessProfile.name = businessData.businessProfile?.name
             businessProfile.tagline = businessData.businessProfile?.tagline
             businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -107,6 +109,7 @@ export class BusinessProfileService {
                         wabaId: businessData.wabaId,
                         accountId: businessData.accountId,
                         profileId: businessData.businessProfile?.id,
+                        botname: businessData.businessProfile?.botname,
                         name: businessData.businessProfile?.name,
                         tagline: businessData.businessProfile?.tagline,
                         serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -121,6 +124,7 @@ export class BusinessProfileService {
                 businessData.businessProfile = data.businessProfileData
 
                 businessProfile.profileId = businessData.businessProfile?.id
+                businessProfile.botname = businessData.businessProfile?.botname
                 businessProfile.name = businessData.businessProfile?.name
                 businessProfile.tagline = businessData.businessProfile?.tagline
                 businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -148,6 +152,7 @@ export class BusinessProfileService {
                         wabaId: businessData.wabaId,
                         accountId: businessData.accountId,
                         profileId: businessData.businessProfile?.id,
+                        botname: businessData.businessProfile?.botname,
                         name: businessData.businessProfile?.name,
                         tagline: businessData.businessProfile?.tagline,
                         serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -161,6 +166,7 @@ export class BusinessProfileService {
                 const businessData = data.businessData
 
                 businessProfile.profileId = businessData.businessProfile?.id
+                businessProfile.botname = businessData.businessProfile?.botname
                 businessProfile.name = businessData.businessProfile?.name
                 businessProfile.tagline = businessData.businessProfile?.tagline
                 businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -179,6 +185,7 @@ export class BusinessProfileService {
 type BusinessProfileType = {
     id: string
     accountId: string
+    botname: string
     name: string
     tagline: string
     serviceDescription: string
@@ -198,4 +205,3 @@ type BusinessInfoType = {
     businessProfile?: BusinessProfileType
     createdAt: Date
 }
-

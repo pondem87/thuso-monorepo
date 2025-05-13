@@ -105,7 +105,7 @@ export class AccountsRmqService {
             <h3>What’s Next?</h3>
             <ol>
                 <li><strong>Create Your WhatsApp Business Account</strong><br>
-                    - Click <a href="https://manage.thuso.pfitztronic.co.bw">here</a> to log in to Thuso and start your setup.<br>
+                    - Click <a href="https://manage.thuso.pfitztronic.co.bw/dashboard">here</a> to log in to Thuso and start your setup.<br>
                     - You will need a Facebook account and a phone number that is not currently in use on WhatsApp.
                 </li>
                 <li><strong>Link Your WhatsApp Number</strong><br>

@@ -9,6 +9,9 @@ export class BusinessProfile {
     @Column("uuid")
     accountId: string
 
+    @Column("varchar", { nullable: true })
+    botname: string
+
     @Column("varchar")
     name: string
 
