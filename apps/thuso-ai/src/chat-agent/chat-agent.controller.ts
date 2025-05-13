@@ -57,7 +57,7 @@ export class ChatAgentController {
     processCustomerRegistration(
         @Payload() data: CustomerRegistrationChatAgentEventPayload
     ) {
-        this.logger.debug("Received message: CustomerRegistrationChatAgentEventPattern")
+        this.logger.info("Received message: CustomerRegistrationChatAgentEventPattern", { data })
         return this.chatMessageHistoryService.processRegistration(data)
     }
 }

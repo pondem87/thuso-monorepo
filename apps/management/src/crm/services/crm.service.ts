@@ -104,7 +104,6 @@ export class CrmService {
                 } as NewCustomerBusinessEventPayload
             )
 
-            return customer
         } catch (error) {
             this.logger.error("Error while creating customer from rmq message", { error, data })
         }
