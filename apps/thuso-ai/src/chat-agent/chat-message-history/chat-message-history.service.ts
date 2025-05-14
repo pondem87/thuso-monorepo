@@ -114,9 +114,19 @@ export class ChatMessageHistoryService {
 
 	async processRegistration(data: CustomerRegistrationChatAgentEventPayload) {
 		try {
-			if (!data.phone_number_id) {
-				await this.chatHistoryRepository.update({ userId: data.whatsAppNumber, wabaId: data.wabaId }, { crmId: data.crmId })
+			if (data.phone_number_id) {
+				for (const phone_number_id of data.phone_number_id) {
+					const chatHistory = new ChatHistory()
+					chatHistory.wabaId = data.wabaId
+					chatHistory.userId = data.whatsAppNumber
+					chatHistory.crmId = data.crmId
+					chatHistory.phoneNumberId = phone_number_id
+					await this.chatHistoryRepository.save(chatHistory)
+				}
+			} else {
+				this.logger.info("Updating chathistory with crmId", { data })
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
+				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
 					chat.crmId = data.crmId
 					await this.chatHistoryRepository.save(chat)
@@ -128,15 +138,6 @@ export class ChatMessageHistoryService {
 							topicLabel: chat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
-				}
-			} else {
-				for (const phone_number_id of data.phone_number_id) {
-					const chatHistory = new ChatHistory()
-					chatHistory.wabaId = data.wabaId
-					chatHistory.userId = data.whatsAppNumber
-					chatHistory.crmId = data.crmId
-					chatHistory.phoneNumberId = phone_number_id
-					await this.chatHistoryRepository.save(chatHistory)
 				}
 			}
 		} catch (error) {
