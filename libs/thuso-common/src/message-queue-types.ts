@@ -170,8 +170,8 @@ export type RegisterCustomerEventPayload = {
     surname: string
     city: string
     country: string
-    age: number
-    gender: Gender
+    age?: number
+    gender?: Gender
     whatsAppNumber: string
 }
 

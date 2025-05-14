@@ -85,8 +85,8 @@ export class LLMFuncToolsProvider {
                 surname: z.string().describe("Customer's family name"),
                 city: z.string().describe("City where the customer resides"),
                 country: z.string().describe("Country where the customer resides"),
-                age: z.number().describe("Age of the customer in years"),
-                gender: z.enum(['male', 'female']).describe("Gender of the customer")
+                // age: z.number().describe("Age of the customer in years"),
+                // gender: z.enum(['male', 'female']).describe("Gender of the customer")
             })
         })
     }

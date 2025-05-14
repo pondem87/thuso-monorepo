@@ -28,8 +28,9 @@ export class CreateCustomerDto {
     @IsNumber()
     age?: number
 
+    @IsOptional()
     @IsEnum(Gender)
-    gender: Gender
+    gender?: Gender
 
     @IsString()
     @Matches(/^(?:\+|00)[1-9][0-9]{6,14}$/, {

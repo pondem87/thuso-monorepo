@@ -18,7 +18,7 @@ export class Customer {
     surname: string
 
     @Column("varchar", { nullable: true })
-    streetAd: string
+    streetAd?: string
 
     @Column("varchar")
     city: string
@@ -27,19 +27,19 @@ export class Customer {
     country: string
 
     @Column("int", { nullable: true })
-    age: number
+    age?: number
 
-    @Column({ type: "enum", enum: Gender })
-    gender: Gender
+    @Column({ type: "enum", enum: Gender, nullable: true })
+    gender?: Gender
 
     @Column("varchar", { nullable: true })
-    email: string
+    email?: string
 
     @Column("varchar")
     whatsAppNumber: string
 
     @Column("varchar", { nullable: true })
-    notes: string
+    notes?: string
 
     @OneToOne(() => Preferences, (prefs) => prefs.customer)
     prefs: Preferences

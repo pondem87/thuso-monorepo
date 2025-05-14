@@ -72,7 +72,7 @@ export class LLMProcessStateMachineProvider {
 
         // if user not in crm alter the prompt
         if (!chatMessageHistory.getChatHistory().crmId) {
-            sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, City, Country, Age, Gender. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, age, gender, city and country?" Then, save this information using the save-customer-data-tool.`
+            sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, City, Country. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, city and country?" Then, save this information using the save-customer-data-tool.`
         }
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(
