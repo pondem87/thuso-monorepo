@@ -128,13 +128,12 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
-					chat.crmId = data.crmId
-					await this.chatHistoryRepository.save(chat)
+					await this.chatHistoryRepository.update({ userId: chat.userId, phoneNumberId: chat.phoneNumberId }, { crmId: data.crmId })
 
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: chat.crmId,
+							crmId: data.crmId,
 							topicLabel: chat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
