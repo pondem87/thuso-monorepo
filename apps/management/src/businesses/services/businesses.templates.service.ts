@@ -7,7 +7,7 @@ import { DeleteResult, EntityNotFoundError, Repository } from "typeorm";
 import { WhatsAppBusiness } from "../entities/whatsapp-business.entity";
 import { CreateWhatsAppTemplateDto } from "../dto/create-template.dto";
 import { EditWhatsAppTemplateDto } from "../dto/edit-template.dto";
-import { generateRandomString, GraphAPIService, MessengerEventPattern, MessengerRMQMessage, TemplateQualityEventPayload, TemplateStatus, TemplateUpdateEventPayload } from "@lib/thuso-common";
+import { APIError, generateRandomString, GraphAPIService, MessengerEventPattern, MessengerRMQMessage, TemplateQualityEventPayload, TemplateStatus, TemplateUpdateEventPayload } from "@lib/thuso-common";
 import { ConfigService } from "@nestjs/config";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 import { SendTemplDto } from "../dto/send-template.dto";
@@ -106,7 +106,12 @@ export class WhatsAppTemplateService {
         }
     }
 
-    async createTemplate(accountId: string, dto: CreateWhatsAppTemplateDto): Promise<WhatsAppTemplate> {
+    async createTemplate(accountId: string, dto: CreateWhatsAppTemplateDto):
+        Promise<{ 
+            success: boolean,
+            template?: WhatsAppTemplate,
+            reason?: string
+        }> {
         try {
             const waba = await this.whatsappBusinessRepo.findOne({ where: { accountId, wabaId: dto.wabaId } })
             if (!waba) {
@@ -133,16 +138,29 @@ export class WhatsAppTemplateService {
             )
 
             if (!tempRes.ok) {
-                const error = await tempRes.json()
-                this.logger.error("Failed to submit template for creatiion", { error, response: tempRes })
+                const data = await tempRes.json()
+                this.logger.error("Failed to submit template for creatiion", { data, response: tempRes })
                 await this.templateRepo.delete(template)
+                if (data.error) {
+                    const error = data.error as APIError
+                    if (error.error_user_title || error.error_user_msg) {
+                        return {
+                            success: false,
+                            reason: `${error.error_user_title}${error.error_user_msg}`
+                        }
+                    }
+                }
                 throw new Error("Graph API failure")
             } else {
                 const data = await tempRes.json() as { id: string, status: TemplateStatus, category: "UTILITY" | "MARKETING" | "AUTHENTICATION" }
                 template.templateId = data.id
                 template.status = data.status
                 template.template.category = data.category
-                return await this.templateRepo.save(template)
+                const newTemplate = await this.templateRepo.save(template)
+                return {
+                    success: true,
+                    template: newTemplate
+                }
             }
         } catch (error) {
             this.logger.error("Failed to create whatsapp template", { accountId, dto, error })
@@ -179,7 +197,7 @@ export class WhatsAppTemplateService {
 
             if (!tempRes.ok) {
                 const error = await tempRes.json()
-                this.logger.error("Failed to submit template for creatiion", { error, response: tempRes })
+                this.logger.error("Failed to submit template for creation", { error, response: tempRes })
                 throw new Error("Graph API Error")
             } else {
                 const data = await tempRes.json() as { id: string, status: TemplateStatus, category: "UTILITY" | "MARKETING" | "AUTHENTICATION" }
