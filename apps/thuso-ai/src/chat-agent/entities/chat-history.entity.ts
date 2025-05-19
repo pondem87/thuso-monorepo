@@ -20,7 +20,7 @@ export class ChatHistory {
     messages: ChatMessage[]
 
     @OneToMany(() => ChatTopic, (chatTopic) => chatTopic.chatHistory)
-    topics: ChatTopic
+    topics: ChatTopic[]
 
     @Column("timestamp", { nullable: true })
     lastMessageTime: Date

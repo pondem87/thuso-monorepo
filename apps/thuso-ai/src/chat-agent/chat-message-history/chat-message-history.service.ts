@@ -84,7 +84,14 @@ export class ChatMessageHistoryService {
 	async addTopic(chatHistory: ChatHistory, label: string): Promise<void> {
 		try {
 			const date = getDateOnly(new Date())
-			const topic = await this.chatTopicRepository.findOneBy({ date, label, chatHistory })
+			const topic = await this.chatTopicRepository
+				.createQueryBuilder()
+				.where('date = :date', { date })
+				.andWhere('label = :label', { label })
+				.andWhere('"chatHistoryUserId" = :userId', { userId: chatHistory.userId })
+				.andWhere('"chatHistoryPhoneNumberId" = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
+				.getOne()
+
 			if (!topic) {
 				// add topic
 				await this.chatTopicRepository.save(
@@ -95,7 +102,13 @@ export class ChatMessageHistoryService {
 					})
 				)
 				// update chathistory
-				await this.chatHistoryRepository.update({ userId: chatHistory.userId, phoneNumberId: chatHistory.phoneNumberId }, { lastTopic: label })
+				await this.chatHistoryRepository
+						.createQueryBuilder()
+						.update()
+						.set({ lastTopic: label })
+						.where('userId = :userId', { userId: chatHistory.userId })
+						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
+						.execute()
 				// message crm of new topic
 				if (chatHistory.crmId) {
 					this.clientService.emitMgntQueue(
@@ -128,8 +141,13 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
-					await this.chatHistoryRepository.update({ userId: chat.userId, phoneNumberId: chat.phoneNumberId }, { crmId: data.crmId })
-
+					await this.chatHistoryRepository
+						.createQueryBuilder()
+						.update()
+						.set({ crmId: data.crmId })
+						.where('userId = :userId', { userId: chat.userId })
+						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chat.phoneNumberId })
+						.execute()
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{

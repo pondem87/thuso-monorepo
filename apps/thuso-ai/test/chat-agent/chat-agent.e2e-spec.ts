@@ -11,11 +11,15 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { v4 as uuidv4 } from "uuid"
 import { Repository } from 'typeorm';
 import { ChatHistory } from '../../src/chat-agent/entities/chat-history.entity';
+import { ChatMessageHistoryService } from '../../src/chat-agent/chat-message-history/chat-message-history.service';
+import { ChatTopic } from '../../src/chat-agent/entities/chat-topic.entity';
 
 describe('ThusoAiController (e2e)', () => {
     let app: INestApplication;
     let chatAgentController: ChatAgentController
     let chatHistoryRepo: Repository<ChatHistory>
+    let chatMsgHisService: ChatMessageHistoryService
+    let chatTopicRepo: Repository<ChatTopic>
 
     const clientProxy = {
         emitWhatsappQueue: jest.fn(),
@@ -54,6 +58,8 @@ describe('ThusoAiController (e2e)', () => {
 
         chatAgentController = moduleFixture.get<ChatAgentController>(ChatAgentController)
         chatHistoryRepo = moduleFixture.get<Repository<ChatHistory>>(getRepositoryToken(ChatHistory))
+        chatTopicRepo = moduleFixture.get<Repository<ChatTopic>>(getRepositoryToken(ChatTopic))
+        chatMsgHisService = moduleFixture.get<ChatMessageHistoryService>(ChatMessageHistoryService)
     }, LONG_TEST_TIMEOUT);
 
     it('call llm', async () => {
@@ -105,6 +111,8 @@ describe('ThusoAiController (e2e)', () => {
             phoneNumberId: "23322989389209"
         })
 
+        await chatHistoryRepo.delete({ userId: chatHistory.userId })
+
         await chatHistoryRepo.save(chatHistory)
 
         const data: CustomerRegistrationChatAgentEventPayload = {
@@ -115,10 +123,53 @@ describe('ThusoAiController (e2e)', () => {
 
         await chatAgentController.processCustomerRegistration(data)
 
-        const savedChatHis = await chatHistoryRepo.findOneBy({ userId: data.whatsAppNumber})
+        const savedChatHis = await chatHistoryRepo.findOneBy({ userId: data.whatsAppNumber })
 
         expect(savedChatHis).toBeTruthy()
         expect(savedChatHis.crmId).toBe(data.crmId)
 
-    })
+        await chatHistoryRepo.delete({ userId: data.whatsAppNumber })
+
+    }, LONG_TEST_TIMEOUT)
+
+    it("add topic", async () => {
+        const chatHistory: ChatHistory = chatHistoryRepo.create({
+            wabaId: "1821972918291891",
+            userId: "277878265899",
+            phoneNumberId: "2332119389209"
+        })
+
+        await chatTopicRepo.delete({
+            chatHistory: {
+                userId: chatHistory.userId,
+                phoneNumberId: chatHistory.phoneNumberId
+            }
+        })
+        await chatHistoryRepo.delete({ userId: chatHistory.userId })
+
+        let chatHis = await chatHistoryRepo.save(chatHistory)
+
+        await chatMsgHisService.addTopic(chatHis, "Information Seeking")
+        await chatMsgHisService.addTopic(chatHis, "Information Seeking")
+
+        const topics = await chatTopicRepo.find({
+            where: {
+                chatHistory: {
+                    userId: chatHis.userId,
+                    phoneNumberId: chatHis.phoneNumberId
+                }
+            }
+        })
+
+        expect(topics.length).toBe(1)
+
+        await chatTopicRepo.delete({
+            chatHistory: {
+                userId: chatHis.userId,
+                phoneNumberId: chatHis.phoneNumberId
+            }
+        })
+        await chatHistoryRepo.delete({ userId: chatHistory.userId })
+
+    }, LONG_TEST_TIMEOUT)
 });
