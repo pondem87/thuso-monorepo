@@ -23,8 +23,7 @@ export class ChatMessageHistoryService {
 		@InjectRepository(ChatTopic)
 		private readonly chatTopicRepository: Repository<ChatTopic>,
 		private readonly loggingService: LoggingService,
-		private readonly clientService: ThusoClientProxiesService,
-		private readonly dataSource: DataSource
+		private readonly clientService: ThusoClientProxiesService
 	) {
 		this.logger = this.loggingService.getLogger({
 			module: "llm-tools",
@@ -129,12 +128,14 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				for (const chat of chats) {
 					// update chathistory
-					chat.crmId = data.crmId
-					const queryResult = await this.dataSource.query(
-						`UPDATE public.chat_history SET "crmId" = $1 WHERE id = $2`,
-						[data.crmId, chat.id]
-					)
-					this.logger.info("Updated chat history", { queryResult })
+					const chatHistory = await this.chatHistoryRepository.findOneBy({ id: chat.id })
+					if (!chatHistory) {
+						this.logger.error("Chat history not found", { chatId: chat.id })
+						continue
+					}
+					chatHistory.crmId = data.crmId
+					const updatedChatHistory = await this.chatHistoryRepository.save(chatHistory)
+					this.logger.info("Updated chat history", { updatedChatHistory })
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
