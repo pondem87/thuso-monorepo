@@ -141,18 +141,14 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
-					await this.chatHistoryRepository
-						.createQueryBuilder()
-						.update()
-						.set({ crmId: data.crmId })
-						.where('userId = :userId', { userId: chat.userId })
-						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chat.phoneNumberId })
-						.execute()
+					chat.crmId = data.crmId
+					const savedChat = await this.chatHistoryRepository.save(chat)
+					this.logger.info("Updated chathistory", { chatHistory: savedChat })
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: data.crmId,
-							topicLabel: chat.lastTopic
+							crmId: savedChat.crmId,
+							topicLabel: savedChat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
 				}
