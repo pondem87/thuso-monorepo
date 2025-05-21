@@ -139,13 +139,8 @@ describe('ThusoAiController (e2e)', () => {
             phoneNumberId: "2332119389209"
         })
 
-        await chatTopicRepo.delete({
-            chatHistory: {
-                userId: chatHistory.userId,
-                phoneNumberId: chatHistory.phoneNumberId
-            }
-        })
-        await chatHistoryRepo.delete({ userId: chatHistory.userId })
+        await chatTopicRepo.delete({})
+        await chatHistoryRepo.delete({})
 
         let chatHis = await chatHistoryRepo.save(chatHistory)
 
@@ -163,13 +158,8 @@ describe('ThusoAiController (e2e)', () => {
 
         expect(topics.length).toBe(1)
 
-        await chatTopicRepo.delete({
-            chatHistory: {
-                userId: chatHis.userId,
-                phoneNumberId: chatHis.phoneNumberId
-            }
-        })
-        await chatHistoryRepo.delete({ userId: chatHistory.userId })
+        await chatTopicRepo.delete({ chatHistory: { id: chatHis.id }})
+        await chatHistoryRepo.delete({ userId: chatHis.userId })
 
     }, LONG_TEST_TIMEOUT)
 });

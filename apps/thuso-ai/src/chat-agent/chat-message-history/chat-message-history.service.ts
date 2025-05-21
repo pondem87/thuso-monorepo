@@ -84,13 +84,7 @@ export class ChatMessageHistoryService {
 	async addTopic(chatHistory: ChatHistory, label: string): Promise<void> {
 		try {
 			const date = getDateOnly(new Date())
-			const topic = await this.chatTopicRepository
-				.createQueryBuilder()
-				.where('date = :date', { date })
-				.andWhere('label = :label', { label })
-				.andWhere('"chatHistoryUserId" = :userId', { userId: chatHistory.userId })
-				.andWhere('"chatHistoryPhoneNumberId" = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
-				.getOne()
+			const topic = await this.chatTopicRepository.findOneBy({ chatHistory: { id: chatHistory.id }, date, label })
 
 			if (!topic) {
 				// add topic
@@ -102,13 +96,7 @@ export class ChatMessageHistoryService {
 					})
 				)
 				// update chathistory
-				await this.chatHistoryRepository
-					.createQueryBuilder()
-					.update()
-					.set({ lastTopic: label })
-					.where('userId = :userId', { userId: chatHistory.userId })
-					.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
-					.execute()
+				await this.chatHistoryRepository.update({ id: chatHistory.id }, { lastTopic: label })
 				// message crm of new topic
 				if (chatHistory.crmId) {
 					this.clientService.emitMgntQueue(
@@ -137,24 +125,17 @@ export class ChatMessageHistoryService {
 					await this.chatHistoryRepository.save(chatHistory)
 				}
 			} else {
-				this.logger.info("Updating chathistory with crmId", { data })
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
-				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
 					// update chathistory
-					const updateResult = await this.chatHistoryRepository
-						.createQueryBuilder()
-						.update()
-						.set({ crmId: data.crmId })
-						.where('userId = :userId', { userId: chat.userId })
-						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chat.phoneNumberId })
-						.execute()
-					this.logger.info("Updated chathistory", { updateResult })
+					chat.crmId = data.crmId
+					const savedChat = await this.chatHistoryRepository.save(chat)
+					this.logger.info("Chat history updated with crmId", { savedChat })
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: data.crmId,
-							topicLabel: chat.lastTopic
+							crmId: savedChat.crmId,
+							topicLabel: savedChat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
 				}

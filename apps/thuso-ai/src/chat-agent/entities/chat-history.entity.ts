@@ -1,13 +1,17 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 import { ChatMessage } from "./chat-message.entity";
 import { ChatTopic } from "./chat-topic.entity";
 
 @Entity()
+@Unique(["userId", "phoneNumberId"])
 export class ChatHistory {
-    @PrimaryColumn("varchar")
+    @PrimaryGeneratedColumn("uuid")
+    id: string
+    
+    @Column("varchar")
     userId: string
 
-    @PrimaryColumn("varchar")
+    @Column("varchar")
     phoneNumberId: string
 
     @Column("uuid", { nullable: true})
