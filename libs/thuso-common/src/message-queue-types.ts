@@ -203,3 +203,8 @@ export type NewTopicLLMEventPayload = {
     crmId: string
     topicLabel: string
 }
+
+export type UpdateChatHistoryCrmIdEventPayload = {
+    crmId: string
+    chatHistoryId: string
+}

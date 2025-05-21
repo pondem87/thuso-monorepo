@@ -12,6 +12,7 @@ export const LLMEventPattern = 'llm'
 export const RegisterCustomerToCRMEventPattern = 'llm-register-customer'
 export const CustomerRegistrationChatAgentEventPattern = 'customer-registered-chat-agent'
 export const NewTopicLLMEventPattern = 'new-llm-conversation-topic'
+export const UpdateChatHistoryCrmIdEventPattern = 'update-chat-history-crm'
 
 // sending emails
 export const SendEmailEventPattern = 'send-email'

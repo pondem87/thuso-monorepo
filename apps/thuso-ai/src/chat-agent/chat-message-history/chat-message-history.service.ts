@@ -7,7 +7,7 @@ import { Logger } from "winston";
 import { ChatMessage } from "../entities/chat-message.entity";
 import { LoggingService } from "@lib/logging";
 import { ChatTopic } from "../entities/chat-topic.entity";
-import { CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPattern, NewTopicLLMEventPayload } from "@lib/thuso-common";
+import { CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPattern, NewTopicLLMEventPayload, UpdateChatHistoryCrmIdEventPattern, UpdateChatHistoryCrmIdEventPayload } from "@lib/thuso-common";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 
@@ -128,14 +128,16 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				for (const chat of chats) {
 					// update chathistory
-					const chatHistory = await this.chatHistoryRepository.findOneBy({ id: chat.id })
-					if (!chatHistory) {
-						this.logger.error("Chat history not found", { chatId: chat.id })
-						continue
-					}
-					chatHistory.crmId = data.crmId
-					const updatedChatHistory = await this.chatHistoryRepository.save(chatHistory)
-					this.logger.info("Updated chat history", { updatedChatHistory })
+					this.logger.info("ChatHistory for update", { chatHistory: chat, crmId: data.crmId })
+					
+					this.clientService.emitLlmQueue(
+						UpdateChatHistoryCrmIdEventPattern,
+						{
+							crmId: data.crmId,
+							chatHistoryId: chat.id
+						} as UpdateChatHistoryCrmIdEventPayload
+					)
+
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
@@ -149,4 +151,19 @@ export class ChatMessageHistoryService {
 			this.logger.error("Error while processing user registration message", { error })
 		}
 	}
+
+	async updateChatHistoryCrmId(data: UpdateChatHistoryCrmIdEventPayload) {
+        try {
+			const chatHistory = await this.chatHistoryRepository.findOneBy({ id: data.chatHistoryId })
+			if (!chatHistory) {
+				this.logger.error("Chat history not found", { chatId: data.chatHistoryId })
+				return
+			}
+			chatHistory.crmId = data.crmId
+			await this.chatHistoryRepository.save(chatHistory)
+			this.logger.info("Updated chat history crmId", { chatHistory })
+		} catch (error) {
+			this.logger.error("Error while updating chat history crmId", { error })
+		}
+    }
 }

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ThusoAiModule } from '../../src/thuso-ai.module';
-import { CustomerRegistrationChatAgentEventPayload, LLMQueueMessage, LONG_TEST_TIMEOUT, MessengerEventPattern, RegisterCustomerToCRMEventPattern } from '@lib/thuso-common';
+import { CustomerRegistrationChatAgentEventPayload, LLMQueueMessage, LONG_TEST_TIMEOUT, MessengerEventPattern, RegisterCustomerToCRMEventPattern, UpdateChatHistoryCrmIdEventPattern } from '@lib/thuso-common';
 import { ChatAgentController } from '../../src/chat-agent/chat-agent.controller';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { BusinessProfileService } from '../../src/chat-agent/services/business-profile.service';
@@ -23,7 +23,8 @@ describe('ThusoAiController (e2e)', () => {
 
     const clientProxy = {
         emitWhatsappQueue: jest.fn(),
-        emitMgntQueue: jest.fn()
+        emitMgntQueue: jest.fn(),
+        emitLlmQueue: jest.fn(),
     }
 
     const businessProfileService = {
@@ -107,13 +108,13 @@ describe('ThusoAiController (e2e)', () => {
     it("chat history update", async () => {
         const chatHistory: ChatHistory = chatHistoryRepo.create({
             wabaId: "1821972918291891",
-            userId: "277878265321",
+            userId: "277878264421",
             phoneNumberId: "23322989389209"
         })
 
         await chatHistoryRepo.delete({ userId: chatHistory.userId })
 
-        await chatHistoryRepo.save(chatHistory)
+        const savedChatHistory = await chatHistoryRepo.save(chatHistory)
 
         const data: CustomerRegistrationChatAgentEventPayload = {
             whatsAppNumber: chatHistory.userId,
@@ -123,10 +124,13 @@ describe('ThusoAiController (e2e)', () => {
 
         await chatAgentController.processCustomerRegistration(data)
 
-        const savedChatHis = await chatHistoryRepo.findOneBy({ userId: data.whatsAppNumber })
+        expect(clientProxy.emitLlmQueue).toHaveBeenCalledWith(UpdateChatHistoryCrmIdEventPattern, { crmId: data.crmId, chatHistoryId: savedChatHistory.id })
 
-        expect(savedChatHis).toBeTruthy()
-        expect(savedChatHis.crmId).toBe(data.crmId)
+        await chatAgentController.updateChatHistoryCrmId({ crmId: data.crmId, chatHistoryId: savedChatHistory.id })
+
+        const chatHistoryLastUpdated = await chatHistoryRepo.findOneBy({ id: savedChatHistory.id })
+
+        expect(chatHistoryLastUpdated.crmId).toBe(data.crmId)
 
         await chatHistoryRepo.delete({ userId: data.whatsAppNumber })
 
