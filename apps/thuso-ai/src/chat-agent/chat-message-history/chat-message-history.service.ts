@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { StoredMessage } from "@langchain/core/messages";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ChatHistory } from "../entities/chat-history.entity";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { Logger } from "winston";
 import { ChatMessage } from "../entities/chat-message.entity";
 import { LoggingService } from "@lib/logging";
@@ -23,7 +23,8 @@ export class ChatMessageHistoryService {
 		@InjectRepository(ChatTopic)
 		private readonly chatTopicRepository: Repository<ChatTopic>,
 		private readonly loggingService: LoggingService,
-		private readonly clientService: ThusoClientProxiesService
+		private readonly clientService: ThusoClientProxiesService,
+		private readonly dataSource: DataSource
 	) {
 		this.logger = this.loggingService.getLogger({
 			module: "llm-tools",
@@ -129,13 +130,16 @@ export class ChatMessageHistoryService {
 				for (const chat of chats) {
 					// update chathistory
 					chat.crmId = data.crmId
-					const savedChat = await this.chatHistoryRepository.save(chat)
-					this.logger.info("Chat history updated with crmId", { savedChat })
+					const queryResult = await this.dataSource.query(
+						`UPDATE public.chat_history SET "crmId" = $1 WHERE id = $2`,
+						[data.crmId, chat.id]
+					)
+					this.logger.info("Updated chat history", { queryResult })
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: savedChat.crmId,
-							topicLabel: savedChat.lastTopic
+							crmId: data.crmId,
+							topicLabel: chat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
 				}

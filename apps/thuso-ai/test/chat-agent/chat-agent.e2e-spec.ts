@@ -107,7 +107,7 @@ describe('ThusoAiController (e2e)', () => {
     it("chat history update", async () => {
         const chatHistory: ChatHistory = chatHistoryRepo.create({
             wabaId: "1821972918291891",
-            userId: "2778782653",
+            userId: "277878265321",
             phoneNumberId: "23322989389209"
         })
 
@@ -135,7 +135,7 @@ describe('ThusoAiController (e2e)', () => {
     it("add topic", async () => {
         const chatHistory: ChatHistory = chatHistoryRepo.create({
             wabaId: "1821972918291891",
-            userId: "277878265899",
+            userId: "27787999999",
             phoneNumberId: "2332119389209"
         })
 
