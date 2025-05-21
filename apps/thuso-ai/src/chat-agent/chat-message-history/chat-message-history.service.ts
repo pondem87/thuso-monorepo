@@ -103,12 +103,12 @@ export class ChatMessageHistoryService {
 				)
 				// update chathistory
 				await this.chatHistoryRepository
-						.createQueryBuilder()
-						.update()
-						.set({ lastTopic: label })
-						.where('userId = :userId', { userId: chatHistory.userId })
-						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
-						.execute()
+					.createQueryBuilder()
+					.update()
+					.set({ lastTopic: label })
+					.where('userId = :userId', { userId: chatHistory.userId })
+					.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chatHistory.phoneNumberId })
+					.execute()
 				// message crm of new topic
 				if (chatHistory.crmId) {
 					this.clientService.emitMgntQueue(
@@ -141,14 +141,20 @@ export class ChatMessageHistoryService {
 				const chats = await this.chatHistoryRepository.findBy({ userId: data.whatsAppNumber, wabaId: data.wabaId })
 				this.logger.info("Updating chathistory", { matchedRecords: chats.length })
 				for (const chat of chats) {
-					chat.crmId = data.crmId
-					const savedChat = await this.chatHistoryRepository.save(chat)
-					this.logger.info("Updated chathistory", { chatHistory: savedChat })
+					// update chathistory
+					const updateResult = await this.chatHistoryRepository
+						.createQueryBuilder()
+						.update()
+						.set({ crmId: data.crmId })
+						.where('userId = :userId', { userId: chat.userId })
+						.andWhere('phoneNumberId = :phoneNumberId', { phoneNumberId: chat.phoneNumberId })
+						.execute()
+					this.logger.info("Updated chathistory", { updateResult })
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: savedChat.crmId,
-							topicLabel: savedChat.lastTopic
+							crmId: data.crmId,
+							topicLabel: chat.lastTopic
 						} as NewTopicLLMEventPayload
 					)
 				}

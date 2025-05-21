@@ -29,7 +29,7 @@ export class ChatMessageHistoryApiService {
 
     async getMessages({ userId, phoneNumberId }: GetMessagesDto, skip, take): Promise<[ChatMessage[], number]> {
         try {
-            return await this.chatMessageRepo.findAndCount({ where: { chatHistory: { userId, phoneNumberId } }, skip, take })
+            return await this.chatMessageRepo.findAndCount({ where: { chatHistory: { userId, phoneNumberId } }, skip, take, order: { createdAt: "DESC" } })
         } catch (error) {
             this.logger.error("Error while retrieving messages", { error })
             throw new HttpException("Error while getting messages", HttpStatus.INTERNAL_SERVER_ERROR)
