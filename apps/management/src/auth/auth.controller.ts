@@ -30,7 +30,7 @@ export class AuthController {
     async login(
         @Body() loginDto: LoginDto
     ) {
-        var user = await this.accountsService.findOneUserByEmail(loginDto.email)
+        var user = await this.accountsService.findOneUserByEmail(loginDto.email.toLowerCase().trim())
         if (user === null) {
             throw new UnauthorizedException()
         }

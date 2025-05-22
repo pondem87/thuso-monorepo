@@ -70,7 +70,7 @@ describe('Login (e2e)', () => {
         // create account and user
         const user = await userRepository.save(
             userRepository.create({
-                email: userData.email,
+                email: userData.email.toLocaleLowerCase().trim(),
                 forenames: userData.forenames.toLowerCase().trim(),
                 surname: userData.surname.toLowerCase().trim(),
                 passwordHash: await bcrypt.hash(userData.password, await bcrypt.genSalt()),
@@ -93,7 +93,7 @@ describe('Login (e2e)', () => {
 
         expect(res.token).toEqual(expect.any(String))
         expect(res.user).toBeInstanceOf(UserDto)
-        expect(res.user.email).toEqual(userData.email)
+        expect(res.user.email).toEqual(userData.email.toLowerCase().trim())
         expect(res.user.rootOf.id).toEqual(account.id)
         expect(res.user.accounts).toBeDefined()
         expect(res.user.accounts).toBeInstanceOf(Array)

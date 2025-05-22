@@ -70,7 +70,7 @@ describe('Accounts Invitations (e2e)', () => {
         // create account and user directly in database
         const user1 = await userRepository.save(
             userRepository.create({
-                email: testUserEmail1,
+                email: testUserEmail1.toLowerCase().trim(),
                 forenames: "tendai precious",
                 surname: "pfidze",
                 passwordHash: await bcrypt.hash("abcdefghi", await bcrypt.genSalt()),
@@ -81,7 +81,7 @@ describe('Accounts Invitations (e2e)', () => {
 
         const account1 = await accountRepository.save(
             accountRepository.create({
-                name: testAccountName1,
+                name: testAccountName1.toLowerCase().trim(),
                 root: user1
             })
         );
@@ -120,14 +120,14 @@ describe('Accounts Invitations (e2e)', () => {
         expect(mgntQClient.emit).toHaveBeenCalledWith(
             SendEmailEventPattern,
             expect.objectContaining({
-                email: testUserEmail2,
+                email: testUserEmail2.toLowerCase(),
                 subject: "Thuso Invitation",
                 text: expect.any(String),
                 html: expect.any(String)
             }))
 
         // use invite
-        const invite = await invitationRepository.findOneBy({ email: testUserEmail2 })
+        const invite = await invitationRepository.findOneBy({ email: testUserEmail2.toLowerCase() })
 
         await request(app.getHttpServer())
             .post(`/management/accounts/create-user/${invite.id}`)
@@ -139,10 +139,10 @@ describe('Accounts Invitations (e2e)', () => {
                 repeatPassword: "abcdefghi",
             })
             .expect(res => {
-                expect(res.body).toEqual({ email: testUserEmail2, accountName: testAccountName1 })
+                expect(res.body).toEqual({ email: testUserEmail2.toLowerCase(), accountName: testAccountName1.toLowerCase() })
             })
 
-        const user = await userRepository.findOneBy({ email: testUserEmail2 })
+        const user = await userRepository.findOneBy({ email: testUserEmail2.toLowerCase() })
 
         // check verication email was sent
         expect(mgntQClient.emit).toHaveBeenCalledTimes(2)
@@ -163,14 +163,14 @@ describe('Accounts Invitations (e2e)', () => {
             })
 
         // check user was added to account
-        const user2 = await userRepository.findOne({ where: { email: testUserEmail2 }, relations: { accounts: true } })
+        const user2 = await userRepository.findOne({ where: { email: testUserEmail2.toLowerCase() }, relations: { accounts: true } })
 
         expect(user2.accounts).toHaveLength(1)
-        expect(user2.accounts[0].name).toBe(testAccountName1)
+        expect(user2.accounts[0].name).toBe(testAccountName1.toLowerCase())
         expect(user2.rootOf).toBeUndefined()
 
         // check invitation was deleted
-        const invite2 = await invitationRepository.findOneBy({ email: testUserEmail2 })
+        const invite2 = await invitationRepository.findOneBy({ email: testUserEmail2.toLowerCase() })
         expect(invite2).toBeNull()
 
         await userTokenRepository.delete({ userId: user1.id })

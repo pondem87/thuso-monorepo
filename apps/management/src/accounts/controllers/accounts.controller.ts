@@ -72,7 +72,7 @@ export class AccountsController {
     requestPasswordReset(
         @Body() data: RequestPasswordResetDto
     ) {
-        return this.accountsService.requestPasswordReset(data.email)
+        return this.accountsService.requestPasswordReset(data.email.toLowerCase().trim())
     }
 
     @Post('reset-password')
@@ -135,7 +135,7 @@ export class AccountsController {
         @Request() request
     ) {
         const { user }: { user: User } = request
-        return this.accountsService.inviteAccountUser(user, accountId, data.email)
+        return this.accountsService.inviteAccountUser(user, accountId, data.email.toLowerCase().trim())
     }
 
     @UseGuards(AuthGuard, PermissionsGuard)

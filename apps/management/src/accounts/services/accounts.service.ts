@@ -15,7 +15,6 @@ import { Invitation } from '../entities/invitation.entity';
 import { User } from '../entities/user.entity';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
-import { ClientProxy } from '@nestjs/microservices';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { OnboardingDto } from '../dto/onboarding.dto';
 
@@ -91,11 +90,11 @@ export class AccountsService {
 
     async createAccountAndRootUser(data: CreateAccountAndRootUserDto): Promise<{ email: string, accountName: string }> {
         // exclude duplicates
-        if (await this.userRepository.findOneBy({ email: data.email.toLowerCase() })) {
+        if (await this.userRepository.findOneBy({ email: data.email.toLowerCase().trim() })) {
             throw new HttpException(`Email ${data.email} already registered.`, HttpStatus.FORBIDDEN)
         }
 
-        if (await this.accountRepository.findOneBy({ name: data.accountName.toLocaleLowerCase() })) {
+        if (await this.accountRepository.findOneBy({ name: data.accountName.toLowerCase().trim() })) {
             throw new HttpException(`Account name "${data.accountName}" is already in use`, HttpStatus.FORBIDDEN)
         }
 
@@ -241,7 +240,7 @@ export class AccountsService {
     }
 
     async passwordReset(data: PasswordResetDto) {
-        const user = await this.userRepository.findOneBy({ email: data.email })
+        const user = await this.userRepository.findOneBy({ email: data.email.toLowerCase().trim() })
 
         if (user == null || user.verificationCode !== data.verificationCode) {
             throw new HttpException("Incorrect details", HttpStatus.NOT_FOUND)
@@ -326,11 +325,11 @@ export class AccountsService {
                 throw new HttpException("Invalid Invitation", HttpStatus.NOT_FOUND)
             }
 
-            if (data.email !== invitation.email) {
+            if (data.email.toLowerCase().trim() !== invitation.email.toLowerCase().trim()) {
                 throw new HttpException("Email does not match invitation", HttpStatus.NOT_ACCEPTABLE)
             }
 
-            if (await this.userRepository.findOneBy({ email: data.email })) {
+            if (await this.userRepository.findOneBy({ email: data.email.toLowerCase().trim() })) {
                 throw new HttpException(`Email ${data.email} already registered.`, HttpStatus.FORBIDDEN)
             }
 
@@ -339,6 +338,7 @@ export class AccountsService {
             const user = await this.userRepository.save(
                 this.userRepository.create({
                     ...data,
+                    email: data.email.toLowerCase().trim(),
                     passwordHash: await bcrypt.hash(data.password, await bcrypt.genSalt()),
                     verificationCode,
                     accounts: [invitation.account]

@@ -7,15 +7,15 @@ import { ChatTopic } from "./chat-topic.entity";
 export class ChatHistory {
     @PrimaryGeneratedColumn("uuid")
     id: string
+
+    @Column("uuid", { nullable: true })
+    crmId?: string
     
     @Column("varchar")
     userId: string
 
     @Column("varchar")
     phoneNumberId: string
-
-    @Column("uuid", { nullable: true})
-    crmId: string
 
     @Column("varchar")
     wabaId: string
