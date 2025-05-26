@@ -64,15 +64,23 @@ export class LLMProcessStateMachineProvider {
             + `Always refer to business documents for more detailed information using the document-search-tool. NEVER ASSUME INFORMATION NOT IN THE DOCUMENTS! `
             + `Products, services and promotions and other features maybe available through main menu by calling the take-action tool.\n\n`;
 
+        if (businessProfile.greeting) {
+            sysMsgTxt += `THE OFFICIAL COMPANY GREETING IS "${businessProfile.greeting}"\n\n`
+        }
+
         const chatMessageHistory = await this.chatMessageHistoryProvider.getChatMessageHistory({
             wabaId: input.context.wabaId,
             userId: input.context.contact.wa_id,
             phoneNumberId: input.context.metadata.phone_number_id
         })
 
+        const chatHistory = chatMessageHistory.getChatHistory()
+
         // if user not in crm alter the prompt
-        if (!chatMessageHistory.getChatHistory().crmId) {
+        if (!chatHistory.customerData) {
             sysMsgTxt += `ALERT! You are engaging with a new customer, therefore make sure to request the following details: Forenames, Surname, City, Country. You can include a prompt like: "To help us provide you with better service, may I please have some details such as your full name, city and country?" Then, save this information using the save-customer-data-tool.`
+        } else {
+            sysMsgTxt += `Current client's name is: ${chatHistory.customerData.fullName.replace(/\b\w/g, (char) => char.toUpperCase())}`
         }
 
         const compiledGraph = this.langGraphAgentProvider.getAgent(

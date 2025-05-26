@@ -7,6 +7,10 @@ export class UpdateBusinessProfileDto {
 
     @IsOptional()
     @IsString()
+    greeting: string;
+
+    @IsOptional()
+    @IsString()
     name?: string;
 
     @IsOptional()

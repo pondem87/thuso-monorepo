@@ -1,9 +1,7 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsString, IsUUID } from "class-validator";
 
 export class GetMessagesDto {
     @IsString()
-    userId: string
-
-    @IsString()
-    phoneNumberId: string
+    @IsUUID()
+    chatHistoryId: string
 }

@@ -23,9 +23,9 @@ export class CrmChatsService {
         this.aiServerRoot = `http://${this.configService.get<string>("AI_SERVER_URL")}:${this.configService.get<string>("AI_SERVER_PORT")}`
     }
 
-    async getMessages(phoneNumberId: string, userId: string, skip: number, take: number) {
+    async getMessages(chatHistoryId: string, skip: number, take: number) {
         try {
-            const response = await fetch(`${this.aiServerRoot}/ai/chat-agent/${phoneNumberId}/${userId}/messages?skip=${skip}&take=${take}`,
+            const response = await fetch(`${this.aiServerRoot}/ai/chat-agent/${chatHistoryId}/messages?skip=${skip}&take=${take}`,
                 {
                     method: "GET",
                     headers: {

@@ -5,7 +5,6 @@ import { InjectRepository } from "@nestjs/typeorm"
 import { Logger } from "winston"
 import { Repository } from "typeorm"
 import { CustomerRegistrationChatAgentEventPattern, CustomerRegistrationChatAgentEventPayload, NewCustomerBusinessEventPayload } from "@lib/thuso-common"
-import { ConfigService } from "@nestjs/config"
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies"
 
 @Injectable()
@@ -17,7 +16,6 @@ export class BusinessesRmqService {
         private readonly loggingService: LoggingService,
         @InjectRepository(WhatsAppBusiness)
         private readonly businessRepository: Repository<WhatsAppBusiness>,
-        private readonly configService: ConfigService,
         private readonly clientService: ThusoClientProxiesService
 
     ) {
@@ -38,6 +36,7 @@ export class BusinessesRmqService {
                         CustomerRegistrationChatAgentEventPattern,
                         {
                             crmId: payload.crmId,
+                            fullname: payload.fullname,
                             whatsAppNumber: payload.whatsAppNumber,
                             wabaId: business.wabaId
                         } as CustomerRegistrationChatAgentEventPayload
@@ -47,6 +46,7 @@ export class BusinessesRmqService {
                         CustomerRegistrationChatAgentEventPattern,
                         {
                             crmId: payload.crmId,
+                            fullname: payload.fullname,
                             whatsAppNumber: payload.whatsAppNumber,
                             wabaId: business.wabaId,
                             phone_number_id: business.appNumbers.map(num => num.appNumberId)

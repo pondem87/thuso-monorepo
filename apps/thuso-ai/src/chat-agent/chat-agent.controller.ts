@@ -1,5 +1,5 @@
 import { LoggingService } from '@lib/logging';
-import { AccountDataUpdatePayload, AccountUpdateChatAgentPattern, BusinessProfileUpdateChatAgentPattern, BusinessProfileUpdatePayload, BusinessUpdateChatAgentPattern, CustomerRegistrationChatAgentEventPattern, CustomerRegistrationChatAgentEventPayload, LLMEventPattern, LLMQueueMessage, UpdateChatHistoryCrmIdEventPattern, UpdateChatHistoryCrmIdEventPayload, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
+import { AccountDataUpdatePayload, AccountUpdateChatAgentPattern, BusinessProfileUpdateChatAgentPattern, BusinessProfileUpdatePayload, BusinessUpdateChatAgentPattern, CustomerRegistrationChatAgentEventPattern, CustomerRegistrationChatAgentEventPayload, LLMEventPattern, LLMQueueMessage, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
 import { Controller } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { ChatAgentService } from './chat-agent.service';
@@ -61,11 +61,4 @@ export class ChatAgentController {
         return this.chatMessageHistoryService.processRegistration(data)
     }
 
-    @EventPattern(UpdateChatHistoryCrmIdEventPattern)
-    updateChatHistoryCrmId(
-        @Payload() data: UpdateChatHistoryCrmIdEventPayload
-    ) {
-        this.logger.info("Received message: UpdateChatHistoryCrmIdEventPattern", { data })
-        return this.chatMessageHistoryService.updateChatHistoryCrmId(data)
-    }
 }

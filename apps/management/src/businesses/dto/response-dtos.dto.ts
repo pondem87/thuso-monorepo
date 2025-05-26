@@ -58,6 +58,7 @@ export class BusinessProfileDto {
     id: string
     accountId: string
     botname: string
+    greeting?: string
     name: string
     tagline: string
     serviceDescription: string
@@ -70,6 +71,7 @@ export class BusinessProfileDto {
         this.id = instance.id
         this.accountId = instance.accountId
         this.botname = instance.botname
+        this.greeting = instance.greeting
         this.name = instance.name
         this.tagline = instance.tagline
         this.serviceDescription = instance.serviceDescription

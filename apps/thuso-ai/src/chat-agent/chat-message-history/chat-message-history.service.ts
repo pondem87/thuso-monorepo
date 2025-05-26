@@ -2,13 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { StoredMessage } from "@langchain/core/messages";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ChatHistory } from "../entities/chat-history.entity";
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { Logger } from "winston";
 import { ChatMessage } from "../entities/chat-message.entity";
 import { LoggingService } from "@lib/logging";
 import { ChatTopic } from "../entities/chat-topic.entity";
-import { CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPattern, NewTopicLLMEventPayload, UpdateChatHistoryCrmIdEventPattern, UpdateChatHistoryCrmIdEventPayload } from "@lib/thuso-common";
+import { CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPattern, NewTopicLLMEventPayload } from "@lib/thuso-common";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
+import { CustomerData } from "../entities/customer-data.entity";
 
 
 @Injectable()
@@ -22,6 +23,8 @@ export class ChatMessageHistoryService {
 		private readonly chatMessageRepository: Repository<ChatMessage>,
 		@InjectRepository(ChatTopic)
 		private readonly chatTopicRepository: Repository<ChatTopic>,
+		@InjectRepository(CustomerData)
+		private readonly customerDataRepository: Repository<CustomerData>,
 		private readonly loggingService: LoggingService,
 		private readonly clientService: ThusoClientProxiesService
 	) {
@@ -98,11 +101,11 @@ export class ChatMessageHistoryService {
 				// update chathistory
 				await this.chatHistoryRepository.update({ id: chatHistory.id }, { lastTopic: label })
 				// message crm of new topic
-				if (chatHistory.crmId) {
+				if (chatHistory.customerData) {
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
 						{
-							crmId: chatHistory.crmId,
+							crmId: chatHistory.customerData.id,
 							topicLabel: label
 						} as NewTopicLLMEventPayload
 					)
@@ -120,8 +123,13 @@ export class ChatMessageHistoryService {
 					const chatHistory = new ChatHistory()
 					chatHistory.wabaId = data.wabaId
 					chatHistory.userId = data.whatsAppNumber
-					chatHistory.crmId = data.crmId
 					chatHistory.phoneNumberId = phone_number_id
+					chatHistory.customerData = await this.customerDataRepository.save(
+						this.customerDataRepository.create({
+							id: data.crmId,
+							fullName: data.fullname
+						})
+					)
 					await this.chatHistoryRepository.save(chatHistory)
 				}
 			} else {
@@ -129,14 +137,17 @@ export class ChatMessageHistoryService {
 				for (const chat of chats) {
 					// update chathistory
 					this.logger.info("ChatHistory for update", { chatHistory: chat, crmId: data.crmId })
-					
-					this.clientService.emitLlmQueue(
-						UpdateChatHistoryCrmIdEventPattern,
-						{
-							crmId: data.crmId,
-							chatHistoryId: chat.id
-						} as UpdateChatHistoryCrmIdEventPayload
+
+					const customerData = await this.customerDataRepository.save(
+						this.customerDataRepository.create({
+							id: data.crmId,
+							fullName: data.fullname
+						})
 					)
+					
+					chat.customerData = customerData
+
+					await this.chatHistoryRepository.save(chat)
 
 					this.clientService.emitMgntQueue(
 						NewTopicLLMEventPattern,
@@ -152,18 +163,4 @@ export class ChatMessageHistoryService {
 		}
 	}
 
-	async updateChatHistoryCrmId(data: UpdateChatHistoryCrmIdEventPayload) {
-        try {
-			const chatHistory = await this.chatHistoryRepository.findOneBy({ id: data.chatHistoryId })
-			if (!chatHistory) {
-				this.logger.error("Chat history not found", { chatId: data.chatHistoryId })
-				return
-			}
-			chatHistory.crmId = data.crmId
-			await this.chatHistoryRepository.save(chatHistory)
-			this.logger.info("Updated chat history crmId", { chatHistory })
-		} catch (error) {
-			this.logger.error("Error while updating chat history crmId", { error })
-		}
-    }
 }

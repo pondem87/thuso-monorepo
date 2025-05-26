@@ -78,6 +78,7 @@ export class ChatMessageHistory extends BaseListChatMessageHistory {
 
     async setLastMessageTime(): Promise<void> {
         this.chatHistory.lastMessageTime = new Date()
+        this.chatHistory.unread = true
         await this.chatMessageHistoryService.saveChatHistory(this.chatHistory)
     }
 

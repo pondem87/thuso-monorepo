@@ -118,19 +118,16 @@ describe('ThusoAiController (e2e)', () => {
 
         const data: CustomerRegistrationChatAgentEventPayload = {
             whatsAppNumber: chatHistory.userId,
+            fullname: "Test User",
             wabaId: chatHistory.wabaId,
             crmId: uuidv4()
         }
 
         await chatAgentController.processCustomerRegistration(data)
 
-        expect(clientProxy.emitLlmQueue).toHaveBeenCalledWith(UpdateChatHistoryCrmIdEventPattern, { crmId: data.crmId, chatHistoryId: savedChatHistory.id })
+        const chatHistoryLastUpdated = await chatHistoryRepo.findOne({ where: { id: savedChatHistory.id }, relations: { customerData: true}})
 
-        await chatAgentController.updateChatHistoryCrmId({ crmId: data.crmId, chatHistoryId: savedChatHistory.id })
-
-        const chatHistoryLastUpdated = await chatHistoryRepo.findOneBy({ id: savedChatHistory.id })
-
-        expect(chatHistoryLastUpdated.crmId).toBe(data.crmId)
+        expect(chatHistoryLastUpdated.customerData?.id).toBe(data.crmId)
 
         await chatHistoryRepo.delete({ userId: data.whatsAppNumber })
 

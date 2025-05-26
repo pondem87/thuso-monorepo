@@ -110,6 +110,7 @@ describe('Business Creations (e2e)', () => {
 
         const data: NewCustomerBusinessEventPayload = {
             initiator: "AI",
+            fullname: "tendai precious pfidze",
             whatsAppNumber: "2727272727",
             accountId: account1.id,
             crmId: uuidv4()
@@ -121,6 +122,7 @@ describe('Business Creations (e2e)', () => {
             CustomerRegistrationChatAgentEventPattern,
             {
                 crmId: data.crmId,
+                fullname: data.fullname,
                 wabaId: business.wabaId,
                 whatsAppNumber: data.whatsAppNumber
             }

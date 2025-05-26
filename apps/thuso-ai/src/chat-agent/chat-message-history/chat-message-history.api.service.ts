@@ -27,9 +27,10 @@ export class ChatMessageHistoryApiService {
         this.logger.info("Initialised Chat message history api service")
     }
 
-    async getMessages({ userId, phoneNumberId }: GetMessagesDto, skip, take): Promise<[ChatMessage[], number]> {
+    async getMessages({ chatHistoryId }: GetMessagesDto, skip, take): Promise<[ChatMessage[], number]> {
         try {
-            return await this.chatMessageRepo.findAndCount({ where: { chatHistory: { userId, phoneNumberId } }, skip, take, order: { createdAt: "DESC" } })
+            this.chatHistoryRepo.update({ id: chatHistoryId }, { unread: false })
+            return await this.chatMessageRepo.findAndCount({ where: { chatHistory: { id: chatHistoryId  } }, skip, take, order: { createdAt: "DESC" } })
         } catch (error) {
             this.logger.error("Error while retrieving messages", { error })
             throw new HttpException("Error while getting messages", HttpStatus.INTERNAL_SERVER_ERROR)
@@ -39,7 +40,7 @@ export class ChatMessageHistoryApiService {
     async getChats({ wabaId }: GetChatsDto,  skip, take, topic): Promise<[ChatHistory[], number]> {
         try {
             this.logger.debug("Getting chats", { wabaId, skip, take, topic})
-            return await this.chatHistoryRepo.findAndCount({ where: { wabaId, lastTopic: topic }, skip, take, order: { lastMessageTime: "DESC" } })
+            return await this.chatHistoryRepo.findAndCount({ where: { wabaId, lastTopic: topic }, relations: { customerData: true }, skip, take, order: { lastMessageTime: "DESC" } })
         } catch (error) {
             this.logger.error("Error whie retrieving chats", { error })
             throw new HttpException("Error while getting chats", HttpStatus.INTERNAL_SERVER_ERROR)

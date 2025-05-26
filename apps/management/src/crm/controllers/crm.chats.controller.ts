@@ -40,13 +40,12 @@ export class CrmChatsController {
     @PermissionsDecorator([
         { entity: "chats", action: PermissionAction.READ }
     ])
-    @Get('messages/:phoneNumberId/:userId')
+    @Get('messages/:chatHistoryId')
     getMessages(
-        @Param('phoneNumberId') phoneNumberId: string,
-        @Param('userId') userId: string,
+        @Param('chatHistoryId') chatHistoryId: string,
         @Query('skip', ParseIntPipe) skip: number,
         @Query('take', ParseIntPipe) take: number
     ) {
-        return this.crmChatsService.getMessages(phoneNumberId, userId, skip, take)
+        return this.crmChatsService.getMessages(chatHistoryId, skip, take)
     }
 }

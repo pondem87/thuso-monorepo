@@ -39,6 +39,7 @@ export class BusinessProfileService {
                     accountId: businessData.accountId,
                     profileId: businessData.businessProfile?.id,
                     botname: businessData.businessProfile?.botname,
+                    greeting: businessData.businessProfile?.greeting,
                     name: businessData.businessProfile?.name,
                     tagline: businessData.businessProfile?.tagline,
                     serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -54,6 +55,7 @@ export class BusinessProfileService {
 
             businessProfile.profileId = businessData.businessProfile?.id
             businessProfile.botname = businessData.businessProfile?.botname
+            businessProfile.greeting = businessData.businessProfile?.greeting
             businessProfile.name = businessData.businessProfile?.name
             businessProfile.tagline = businessData.businessProfile?.tagline
             businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -110,6 +112,7 @@ export class BusinessProfileService {
                         accountId: businessData.accountId,
                         profileId: businessData.businessProfile?.id,
                         botname: businessData.businessProfile?.botname,
+                        greeting: businessData.businessProfile?.greeting,
                         name: businessData.businessProfile?.name,
                         tagline: businessData.businessProfile?.tagline,
                         serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -125,6 +128,7 @@ export class BusinessProfileService {
 
                 businessProfile.profileId = businessData.businessProfile?.id
                 businessProfile.botname = businessData.businessProfile?.botname
+                businessProfile.greeting = businessData.businessProfile?.greeting
                 businessProfile.name = businessData.businessProfile?.name
                 businessProfile.tagline = businessData.businessProfile?.tagline
                 businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -153,6 +157,7 @@ export class BusinessProfileService {
                         accountId: businessData.accountId,
                         profileId: businessData.businessProfile?.id,
                         botname: businessData.businessProfile?.botname,
+                        greeting: businessData.businessProfile?.greeting,
                         name: businessData.businessProfile?.name,
                         tagline: businessData.businessProfile?.tagline,
                         serviceDescription: businessData.businessProfile?.serviceDescription,
@@ -167,6 +172,7 @@ export class BusinessProfileService {
 
                 businessProfile.profileId = businessData.businessProfile?.id
                 businessProfile.botname = businessData.businessProfile?.botname
+                businessProfile.greeting = businessData.businessProfile?.greeting
                 businessProfile.name = businessData.businessProfile?.name
                 businessProfile.tagline = businessData.businessProfile?.tagline
                 businessProfile.serviceDescription = businessData.businessProfile?.serviceDescription
@@ -185,7 +191,8 @@ export class BusinessProfileService {
 type BusinessProfileType = {
     id: string
     accountId: string
-    botname: string
+    botname: string | null
+    greeting: string | null
     name: string
     tagline: string
     serviceDescription: string

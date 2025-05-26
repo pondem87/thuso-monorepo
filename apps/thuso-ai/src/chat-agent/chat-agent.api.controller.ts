@@ -33,7 +33,7 @@ export class ChatAgentApiController {
         return this.chatMsgHistoryApiService.getChats(dto, skip, take, topic)
     }
 
-    @Get(':phoneNumberId/:userId/messages')
+    @Get(':chatHistoryId/messages')
     getMessages(
         @Param() dto: GetMessagesDto,
         @Query('skip', ParseIntPipe) skip: number,

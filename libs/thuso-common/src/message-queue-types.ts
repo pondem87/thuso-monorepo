@@ -154,7 +154,8 @@ type WhatsAppBusinessData = {
 type BusinessProfileData = {
     id: string
     accountId: string
-    botname: string
+    botname: string | null
+    greeting: string | null
     name: string
     tagline: string
     serviceDescription: string
@@ -177,6 +178,7 @@ export type RegisterCustomerEventPayload = {
 
 export type CustomerRegistrationChatAgentEventPayload = {
     crmId: string
+    fullname: string
     whatsAppNumber: string
     wabaId: string
     phone_number_id?: string[]
@@ -184,6 +186,7 @@ export type CustomerRegistrationChatAgentEventPayload = {
 
 export type NewCustomerBusinessEventPayload = {
     crmId: string
+    fullname: string
     whatsAppNumber: string
     accountId: string
     initiator: "AI" | "USER"
@@ -202,9 +205,4 @@ export type TemplateQualityEventPayload = {
 export type NewTopicLLMEventPayload = {
     crmId: string
     topicLabel: string
-}
-
-export type UpdateChatHistoryCrmIdEventPayload = {
-    crmId: string
-    chatHistoryId: string
 }

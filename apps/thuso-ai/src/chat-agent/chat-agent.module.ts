@@ -19,9 +19,10 @@ import { ChatAgentApiController } from './chat-agent.api.controller';
 import { ChatMessageHistoryApiService } from './chat-message-history/chat-message-history.api.service';
 import { TokenUsageService } from './services/token-usage.service';
 import { MonthlyTokenUsage } from './entities/monthly-token-usage.entity';
+import { CustomerData } from './entities/customer-data.entity';
 
 @Module({
-  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, ChatTopic, ChatMessage, MonthlyTokenUsage]), ThusoClientProxiesModule],
+  imports: [LoggingModule, EmbeddingModule, TypeOrmModule.forFeature([BusinessProfile, ChatHistory, CustomerData, ChatTopic, ChatMessage, MonthlyTokenUsage]), ThusoClientProxiesModule],
   controllers: [ChatAgentController, ChatAgentApiController],
   providers: [
     ChatAgentService,

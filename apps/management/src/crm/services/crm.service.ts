@@ -62,6 +62,7 @@ export class CrmService {
                 {
                     crmId: customer.id,
                     accountId: customer.accountId,
+                    fullname: `${customer.forenames} ${customer.surname}`,
                     whatsAppNumber: customer.whatsAppNumber,
                     initiator: "USER"
                 } as NewCustomerBusinessEventPayload
@@ -99,6 +100,7 @@ export class CrmService {
                 {
                     crmId: customer.id,
                     accountId: customer.accountId,
+                    fullname: `${customer.forenames} ${customer.surname}`,
                     whatsAppNumber: customer.whatsAppNumber,
                     initiator: "AI"
                 } as NewCustomerBusinessEventPayload

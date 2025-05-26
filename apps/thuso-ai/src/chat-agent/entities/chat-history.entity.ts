@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 import { ChatMessage } from "./chat-message.entity";
 import { ChatTopic } from "./chat-topic.entity";
+import { CustomerData } from "./customer-data.entity";
 
 @Entity()
 @Unique(["userId", "phoneNumberId"])
@@ -8,8 +9,9 @@ export class ChatHistory {
     @PrimaryGeneratedColumn("uuid")
     id: string
 
-    @Column("uuid", { nullable: true })
-    crmId?: string
+    @OneToOne(() => CustomerData, (customerData) => customerData.chatHistory)
+    @JoinColumn()
+    customerData: CustomerData
     
     @Column("varchar")
     userId: string
@@ -31,6 +33,9 @@ export class ChatHistory {
 
     @Column("varchar", { nullable: true })
     lastTopic: string
+
+    @Column("boolean", { default: false })
+    unread: boolean
 
     @UpdateDateColumn()
     updatedAt: Date
