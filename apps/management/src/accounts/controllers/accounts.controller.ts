@@ -18,6 +18,11 @@ import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
 import { OnboardingDto } from '../dto/onboarding.dto';
 
+/*
+*  AccountsController provides endpoints for managing users and accounts and related operations from the frontend.
+*
+*/
+
 @Controller('management/accounts')
 export class AccountsController {
     private logger: Logger
@@ -35,6 +40,16 @@ export class AccountsController {
     }
 
     //// USER FOCUSED METHODS
+    /*
+     *  These methods are focused on user management, such as creating accounts, resetting passwords, and verifying accounts.
+    */
+
+    /*
+     * Creates a new account and root user.
+     * This endpoint is used to create an account with a root user in one step.
+     * @param data - The data required to create the account and root user.
+     * @returns The created account name and root user email.
+    */
     @Post('create-account-user')
     createAccountAndRootUser(
         @Body() data: CreateAccountAndRootUserDto
@@ -42,6 +57,9 @@ export class AccountsController {
         return this.accountsService.createAccountAndRootUser(data)
     }
 
+    /*
+     *  Creates new user assigned to the account which issued the invitation with invitationId
+    */
     @Post('create-user/:invitationId')
     createAccountWithInvite(
         @Body() data: CreateUserDto,
@@ -50,6 +68,9 @@ export class AccountsController {
         return this.accountsService.createUserWithInvite(invitationId, data)
     }
 
+    /*
+     * When the invited user already has an account, this method creates the account-user link
+    */
     @Get('accept-invitation/:invitationId')
     acceptInvitation(
         @Param('invitationId') invitationId: string

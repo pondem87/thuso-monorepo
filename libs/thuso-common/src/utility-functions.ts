@@ -92,6 +92,12 @@ export function generateS3Key(type: "image" | "document" | "video", subfolder: s
     return `${type}/${subfolder}/${generateRandomString(15, "alpha")}${extname(filename)}`
 }
 
+/*
+* This function crops a given text to a specified length, adding "..." if the text exceeds that length. While ensuring not to exceed the specified length.
+* @param text - The text to be cropped.
+* @param length - The maximum length of the text after cropping.
+* @return The cropped text, or an empty string if the length is less than or equal to 0.
+*/
 export function cropTextToLength(text: string, length: number): string {
     const _text = text.trim();
     if (length <= 0) return "";

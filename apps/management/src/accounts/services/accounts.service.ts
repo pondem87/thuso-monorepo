@@ -1,10 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Logger } from 'winston';
 import { LoggingService } from '@lib/logging';
 import * as bcrypt from 'bcrypt';
-import { AccountDataUpdatePayload, AccountUpdateChatAgentPattern, AccountUpdateMessageProcessorPattern, AccountUpdateMessengerPattern, emailHtmlTemplate, generateRandomString, MgntRmqClient, SendEmailEventPattern, SendEmailQueueMessage, UserDataUpdatePayload, UserUpdateAccountsPattern } from '@lib/thuso-common';
+import { AccountDataUpdatePayload, AccountUpdateChatAgentPattern, AccountUpdateMessageProcessorPattern, AccountUpdateMessengerPattern, emailHtmlTemplate, generateRandomString, SendEmailEventPattern, SendEmailQueueMessage, UserDataUpdatePayload, UserUpdateAccountsPattern } from '@lib/thuso-common';
 import { CreateAccountAndRootUserDto } from '../dto/create-account-and-root-user.dto';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -17,6 +17,10 @@ import { ChangePasswordDto } from '../dto/change-password.dto';
 import { EditUserDto } from '../dto/edit-user.dto';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { OnboardingDto } from '../dto/onboarding.dto';
+
+/*
+ *   Implements logic for the account service
+ */
 
 @Injectable()
 export class AccountsService {
@@ -252,6 +256,9 @@ export class AccountsService {
     }
 
     // ACCOUNT CENTERED METHODS
+    /*
+     * Create an invitation to join account and send the email to end user
+    */
     async inviteAccountUser(user: User, accountId, email: string) {
         try {
             const account = await this.accountRepository.findOneBy({ id: accountId })
@@ -265,14 +272,17 @@ export class AccountsService {
                 })
             )
 
-            const inviteLink = `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
+            // check if user already exists
+            const user = await this.userRepository.findOneBy({ email })
+
+            const inviteLink = user ? `https://manage.thuso.pfitz.co.zw/accept/${invite.id}` : `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
 
             // send to email
             const emailHtml = emailHtmlTemplate(
                 `Welcome to Thuso`,
                 `
                 <p>You have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso</p>
-                <p><a href="${inviteLink}">Click here</a> to set up your account.</p>
+                <p><a href="${inviteLink}">Click here</a> to set up your user account or add a guest account to your existing account.</p>
                 `
             )
 
@@ -280,6 +290,7 @@ export class AccountsService {
                 `Welcome to Thuso.\n\nYou have been invited to contribute to "${account.name}" by "${user.email} (${user.forenames + " " + user.surname})" on Thuso`
                 + `Use this link to set up your account: ${inviteLink}`
 
+            // send email to queue
             this.clientsService.emitMgntQueue(
                 SendEmailEventPattern,
                 {
@@ -297,6 +308,11 @@ export class AccountsService {
         }
     }
 
+    /*
+     * create an account for an existing user
+     * this user is a guest user for some account and now want their own account
+     * 
+    */
     async createAccountWithUser(user: User, data: CreateAccountDto): Promise<{ email: string, accountName: string }> {
         try {
             if (await this.accountRepository.findOneBy({ name: data.name })) {
@@ -317,14 +333,19 @@ export class AccountsService {
         }
     }
 
+    /*
+     * When a user with no prior account accepts invitation to join account
+    */
     async createUserWithInvite(invitationId: string, data: CreateUserDto): Promise<{ email: string, accountName: string }> {
         try {
+            // check if invitation id points to invitation we issued
             const invitation = await this.invitationRepository.findOne({ where: { id: invitationId }, relations: { account: true } })
 
             if (invitation == null) {
                 throw new HttpException("Invalid Invitation", HttpStatus.NOT_FOUND)
             }
 
+            // the email of user account being created should be the same as the invitation email
             if (data.email.toLowerCase().trim() !== invitation.email.toLowerCase().trim()) {
                 throw new HttpException("Email does not match invitation", HttpStatus.NOT_ACCEPTABLE)
             }
@@ -356,6 +377,7 @@ export class AccountsService {
                 createdAt: user.createdAt
             }
             
+            // inform other services of new accont creation
             this.clientsService.emitMgntQueue(UserUpdateAccountsPattern, {
                 userData: newUserData,
                 event: "NEW-GUEST"
@@ -376,13 +398,13 @@ export class AccountsService {
     */
     async acceptInvitation(invitationId: string): Promise<{ message: string }> {
         try {
-            // get invitation
+            // get invitation with matching id
             const invitation = await this.invitationRepository.findOne({ where: { id: invitationId }, relations: { account: true } })
 
-            // get user
+            // get invited user 
             const user = await this.userRepository.findOne({ where: { email: invitation.email }, relations: { accounts: true } })
 
-            // add account to user
+            // add account to user's accounts
             user.accounts.push(invitation.account)
 
             // save user

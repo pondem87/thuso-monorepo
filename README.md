@@ -4,11 +4,15 @@ This repository contains the NestJS microservices for Thuso services together wi
 
 # Services
 ## Management service
-- Modules: Accounts, Auth, Businesses, Products, Documents, CRM, Contacts, Promotions
+- Modules: Accounts, Auth, Businesses, Products, Documents, CRM, Contacts, Promotions, Media
 
 ### Accounts
+Manages accounts and users
+Manages user permissions
+Defines the permissions guard which is used throughout the management service for access control
 
 #### Permissions Guard
+NestJS guard applied to all controller methods where access control is required. Works together with the permissions decorator which attaches the permissions.
 
 ### Auth
 
@@ -21,6 +25,8 @@ This repository contains the NestJS microservices for Thuso services together wi
 ### Documents
 
 ### CRM
+
+### Media
 
 ## Thuso-whatsapp service
 - Modules: WhatsApp, Message-processor, Whatsapp-messenger
