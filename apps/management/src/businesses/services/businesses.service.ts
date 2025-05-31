@@ -16,6 +16,10 @@ import { BusinessProfile } from '../entities/business-profile.entity';
 import { User } from '../../accounts/entities/user.entity';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
+/*
+ * Provides services for managing WhatsApp businesses, including creating, updating, and deleting businesses and their profiles.
+ * Gives the fronted access to WhatsApp Business API functionalities such as registering phone numbers, subscribing to webhooks, and retrieving business details.
+*/
 @Injectable()
 export class BusinessesService {
     private logger: Logger
@@ -41,6 +45,15 @@ export class BusinessesService {
         this.logger.info("Businesses service created")
     }
 
+    /**
+     * Creates a new WhatsApp Business account and phone number mirroring the ones on the user's facebook account.
+     * This method retrieves the business token from Meta's API using the provided exchange token.
+     * Registers the phone number with WhatsApp and subscribes to the business webhooks.
+     * @param user - The user creating the business.
+     * @param accountId - The ID of the account to which the business belongs.
+     * @param data - The data required to create the business and register the phone number.
+     * @returns A promise that resolves to the created WhatsApp Business and its registered phone number.
+     */
     async createWhatsAppBusiness(user: User, accountId: string, data: CreateBusinessDto): Promise<{ waba: WhatsAppBusinessDto, appNumber: WhatsAppNumberDto } | { error: string }> {
         // Get business token from meta
         try {
@@ -165,7 +178,7 @@ export class BusinessesService {
                 }
             }
 
-            // inform services of business creation
+            // Inform other services and modules of business creation
             const businessDataPayload = {
                 businessData: {
                     ...business
@@ -188,6 +201,13 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Retrieves the display number for a given WhatsApp number.
+     * This method fetches the display phone number from the WhatsApp Business API.
+     * @param accountId - The ID of the account to which the WhatsApp number belongs.
+     * @param id - The ID of the WhatsApp number.
+     * @returns A promise that resolves to an object indicating success or failure.
+     */
     async getDisplayNumber(accountId: string, id: string): Promise<{ success: boolean }> {
         try {
             const appNumber = await this.whatsappNumberRepository.findOne({ where: { accountId, id }, relations: { waba: true } })
@@ -244,6 +264,13 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Retrieves the business name for a given WhatsApp Business account.
+     * This method fetches the business name from the WhatsApp Business API using the WABA ID.
+     * @param accountId - The ID of the account to which the WhatsApp Business belongs.
+     * @param id - The ID of the WhatsApp Business.
+     * @returns A promise that resolves to an object containing the business name and other details.
+     */
     async getBusinessName(accountId: string, id: string): Promise<WhatsAppBusinessDto> {
         try {
             const business = await this.whatsappBusinessRepository.findOne({ where: { accountId, id }, relations: { appNumbers: true } })
@@ -282,6 +309,12 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Registers a WhatsApp number with the WhatsApp Business API.
+     * @param accountId 
+     * @param id - The ID of the WhatsApp number to register.
+     * @returns { success: boolean } - An object indicating whether the registration was successful.
+     */
     async registerAppNumber(accountId: string, id: string) {
         try {
             const appNumber = await this.whatsappNumberRepository.findOne({ where: { accountId, id }, relations: { waba: true } })
@@ -317,6 +350,12 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Subscribes to the WhatsApp Business account's webhooks.
+     * @param accountId 
+     * @param id 
+     * @returns business - The updated WhatsApp Business account with subscription status.
+     */
     async subscribeBusiness(accountId: string, id: string) {
         try {
             const business = await this.whatsappBusinessRepository.findOne({ where: { accountId, id }, relations: { appNumbers: true } })
@@ -346,6 +385,13 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Retrieves a specific WhatsApp Business account by its ID.
+     * This method fetches the business details along with its business profile and associated app numbers.
+     * @param accountId 
+     * @param id - The ID of the WhatsApp Business account to retrieve.
+     * @returns business - The retrieved WhatsApp Business account details.
+     */
     async getBusiness(accountId: string, id: string): Promise<WhatsAppBusinessDto> {
         try {
             return new WhatsAppBusinessDto(await this.whatsappBusinessRepository.findOneOrFail({ where: { accountId, id }, relations: { businessProfile: true, appNumbers: true } }))
@@ -361,6 +407,11 @@ export class BusinessesService {
         }
     }
 
+    /**
+     * Retrieves all WhatsApp Business accounts associated with a specific account ID.
+     * @param accountId 
+     * @returns 
+     */
     async getBusinesses(accountId: string): Promise<WhatsAppBusinessDto[]> {
         try {
             return (await this.whatsappBusinessRepository.find({ where: { accountId }, relations: { businessProfile: true } })).map((business) => new WhatsAppBusinessDto(business))

@@ -13,6 +13,10 @@ import { LoggingService } from '@lib/logging';
 import { ConfigService } from '@nestjs/config';
 import { AccountsService } from '../accounts/services/accounts.service';
 
+/*
+ * AuthGuard is a guard that checks if the user is authenticated
+ * Attaches the user object to the request
+*/
 @Injectable()
 export class AuthGuard implements CanActivate {
 
@@ -57,7 +61,7 @@ export class AuthGuard implements CanActivate {
                 throw new UnauthorizedException();
             }
             request['user'] = user
-            // so we can use it to logout this token
+            // so we can use it in the logout route to logout this token
             request['token'] = token
         } catch {
             throw new UnauthorizedException();

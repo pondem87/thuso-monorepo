@@ -1,6 +1,18 @@
 import { extname } from "path";
 import { WHATSAPP_DOCS_MIMETYPES, WHATSAPP_IMAGES_MIMETYPES } from "./constants";
 
+/**
+ * Generates a random string of a specified length using the specified mode.
+ * Modes include:
+ * - "alpha-numeric-caps": Uppercase letters and numbers
+ * - "alpha-numeric": Uppercase and lowercase letters, and numbers
+ * - "alpha": Uppercase and lowercase letters
+ * - "alpha-caps": Uppercase letters only
+ * - "numeric": Numbers only
+ * @param length - The length of the random string to generate.
+ * @param mode - The mode to use for generating the string.
+ * @returns A random string of the specified length and mode.
+ */
 export function generateRandomString(length: number, mode: "alpha-numeric-caps" | "alpha-numeric" | "alpha" | "alpha-caps" | "numeric" = "alpha-numeric-caps"): string {
     let characters: string
 
@@ -33,6 +45,12 @@ export function generateRandomString(length: number, mode: "alpha-numeric-caps" 
     return result;
 }
 
+/**
+ * Checks if a given date is less than a specified number of days old.
+ * @param date - The Date object to check.
+ * @param days - The number of days to compare against.
+ * @returns - True if the date is less than the specified number of days old, false otherwise.
+ */
 export function isDateLessThanDaysOld(date: Date, days: number): boolean {
     const currentDate = new Date();
     const pastDate = new Date(currentDate);
@@ -41,6 +59,12 @@ export function isDateLessThanDaysOld(date: Date, days: number): boolean {
     return date >= pastDate;
 }
 
+/**
+ * Checks if a given date is less than a specified number of hours old.
+ * @param date - The Date object to check.
+ * @param hours - The number of hours to compare against.
+ * @returns - True if the date is less than the specified number of hours old, false otherwise.
+ */
 export function isDateLessThanHoursOld(date: Date, hours: number): boolean {
     const currentDate = new Date();
     const pastDate = new Date(currentDate);
@@ -49,6 +73,12 @@ export function isDateLessThanHoursOld(date: Date, hours: number): boolean {
     return date >= pastDate;
 }
 
+
+/**
+ * Converts a Date object to a custom date string format: "DD Month YYYY".
+ * @param date - The Date object to convert.
+ * @return The formatted date string.
+ */
 export function toCustomDateString(date: Date): string {
     const dateObj = new Date(date)
     const dayOfMonth = dateObj.getDate()
@@ -57,6 +87,11 @@ export function toCustomDateString(date: Date): string {
     return `${dayOfMonth} ${month} ${year}`
 }
 
+/**
+ * Converts a number (0-11) to the corresponding month name.
+ * @param number - The month number (0 for January, 11 for December).
+ * @return The name of the month as a string.
+ */
 export function numberToMonth(number: number) {
     switch (number) {
         case 0:
@@ -88,11 +123,19 @@ export function numberToMonth(number: number) {
     }
 }
 
+/**
+ * Generates a unique S3 key for storing files based on type, subfolder, and filename.
+ * The key is structured as "type/subfolder/randomString.extension".
+ * @param type - The type of file (e.g., "image", "document", "video").
+ * @param subfolder - The subfolder where the file will be stored. - we use accountId or businessId
+ * @param filename - The original filename to derive the extension.
+ * @returns - A unique S3 key for the file.
+ */
 export function generateS3Key(type: "image" | "document" | "video", subfolder: string, filename: string): string {
     return `${type}/${subfolder}/${generateRandomString(15, "alpha")}${extname(filename)}`
 }
 
-/*
+/**
 * This function crops a given text to a specified length, adding "..." if the text exceeds that length. While ensuring not to exceed the specified length.
 * @param text - The text to be cropped.
 * @param length - The maximum length of the text after cropping.
@@ -105,10 +148,21 @@ export function cropTextToLength(text: string, length: number): string {
     return _text.length > length ? `${_text.slice(0, length - 3)}...` : _text
 }
 
+/**
+ * Converts a Date object to a string in the format "YYYY-MM-DD".
+ * @param date - The Date object to convert.
+ * @returns - The formatted date string in "YYYY-MM-DD" format.
+ */
 export function getDateOnly(date: Date): string {
     return date.toISOString().split("T")[0];
 }
 
+/**
+ * Returns the category of a file based on its MIME type
+ * Categories include "image", "video", and "document".
+ * @param mimetype - The MIME type of the file.
+ * @returns - The category of the file based on its MIME type. 
+ */
 export function getFileCategory(mimetype: string): "image" | "video" | "document" {
     if (WHATSAPP_IMAGES_MIMETYPES.includes(mimetype)) {
       return "image";
@@ -125,6 +179,12 @@ export function getFileCategory(mimetype: string): "image" | "video" | "document
     return
 }
 
+/**
+ * Generates an HTML email template with a heading and content.
+ * @param heading - The heading of the email.
+ * @param content - The main content of the email.
+ * @returns - A string containing the HTML structure of the email.
+ */
 export function emailHtmlTemplate(heading: string, content: string) {
     return `<html>
                 <head>

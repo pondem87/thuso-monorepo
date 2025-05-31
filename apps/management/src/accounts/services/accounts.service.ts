@@ -44,6 +44,11 @@ export class AccountsService {
         this.logger.info("Init AccountsService")
     }
 
+    /**
+     * Retrieves a user by their id and includes their accounts, permissions, and root account.
+     * @param id - the id of the user to find
+     * @returns 
+     */
     async findOneUserById(id: string): Promise<User | null> {
         try {
             return await this.userRepository.findOne({
@@ -60,6 +65,11 @@ export class AccountsService {
         }
     }
 
+    /**
+     * Retrieves an account by its id and includes its root user, users, and invitations.
+     * @param id - the id of the account to find
+     * @returns account details - the account object if found, otherwise null
+     */
     async findOneAccountById(id: string): Promise<AccountDto> {
         try {
             return new AccountDto(await this.accountRepository.findOne({
@@ -76,6 +86,11 @@ export class AccountsService {
         }
     }
 
+    /**
+     * Retrieves a user by their email and includes their accounts, permissions, and root account.
+     * @param email - the email of the user to find
+     * @returns user - the user object if found, otherwise null
+     */
     async findOneUserByEmail(email: string): Promise<User | null> {
         try {
             return await this.userRepository.findOne({
@@ -92,6 +107,11 @@ export class AccountsService {
         }
     }
 
+    /**
+     * Creates a new account and root user.
+     * @param data - the data for creating the account and root user
+     * @returns an object containing the email and account name of the newly created account
+     */
     async createAccountAndRootUser(data: CreateAccountAndRootUserDto): Promise<{ email: string, accountName: string }> {
         // exclude duplicates
         if (await this.userRepository.findOneBy({ email: data.email.toLowerCase().trim() })) {
@@ -177,6 +197,12 @@ export class AccountsService {
         }
     }
 
+    /**
+     * Check user's verification code and mark them as verified if it matches.
+     * @param user - the user to verify
+     * @param verificationCode 
+     * @returns user data transfer object
+     */
     async verifyAccount(user: User, verificationCode: string): Promise<UserDto> {
         if (user.verificationCode !== verificationCode) {
             throw new HttpException("Wrong Code", HttpStatus.NOT_ACCEPTABLE)
@@ -452,6 +478,12 @@ export class AccountsService {
         return new UserDto(await this.userRepository.save(user))
     }
 
+    /**
+     * Progresses the onboarding state of a user.
+     * @param user - the user whose onboarding state is to be updated
+     * @param dto - the onboarding data transfer object containing the next state
+     * @returns updated user data transfer object
+     */
     async progressOnboarding(user: User, dto: OnboardingDto) {
         try {
             user.onboardingState = dto.next

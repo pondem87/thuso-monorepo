@@ -5,6 +5,11 @@ import { EventPattern, Payload } from "@nestjs/microservices";
 import { Logger } from "winston";
 import { WhatsAppTemplateService } from "../services/businesses.templates.service";
 
+/**
+ * WhatsApp Template Rmq Controller
+ * Handles incoming events related to WhatsApp template updates and quality checks.
+ * Uses the WhatsAppTemplateService to process these events.
+ */
 @Controller()
 export class WhatsAppTemplateRmqController {
     private logger: Logger

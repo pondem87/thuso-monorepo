@@ -7,6 +7,9 @@ import { Repository } from "typeorm"
 import { CustomerRegistrationChatAgentEventPattern, CustomerRegistrationChatAgentEventPayload, NewCustomerBusinessEventPayload } from "@lib/thuso-common"
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies"
 
+/*
+ * Provides functionality for the rabbitmq handlers for the businesses module.
+*/
 @Injectable()
 export class BusinessesRmqService {
     

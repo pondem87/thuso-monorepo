@@ -4,6 +4,12 @@ import { AccountDataUpdatePayload, emailHtmlTemplate, SendEmailEventPattern, Sen
 import { Injectable } from "@nestjs/common"
 import { Logger } from "winston"
 
+/*
+ * This service handles account and user updates via RabbitMQ messages.
+ * It processes account updates and sends welcome and next steps emails to users.
+ *
+*/
+
 @Injectable()
 export class AccountsRmqService {
     private logger: Logger
@@ -33,6 +39,10 @@ export class AccountsRmqService {
         }
     }
 
+    /**
+     * Processes user data updates and sends appropriate emails based on the event type.
+     * @param data - type: UserDataUpdatePayload - The user data update payload containing event type and user data.
+     */
     async processUserUpdate(data: UserDataUpdatePayload) {
         switch (data.event) {
             case "NEW":

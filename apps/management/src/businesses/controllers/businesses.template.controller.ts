@@ -12,6 +12,10 @@ import { SendTemplDto } from "../dto/send-template.dto";
 import { GetMediaIdDto } from "../dto/get-media-id.dto";
 import { GetMediaHandleDto } from "../dto/get-media-handle.dto";
 
+/*
+ * Frontend API for managing WhatsApp templates.
+ * This controller handles the creation, retrieval, updating, and deletion of WhatsApp templates.
+*/
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller("management/:account/templates")
 export class WhatsAppTemplateController {

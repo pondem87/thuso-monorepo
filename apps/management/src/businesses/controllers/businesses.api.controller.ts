@@ -4,6 +4,12 @@ import { UseGuards, Controller, Get, Param } from "@nestjs/common"
 import { Logger } from "winston"
 import { BusinessesApiService } from "../services/businesses.api.service"
 
+/*
+ * BusinessesApiController
+ * This controller handles API requests from other services related to businesses.
+ * It provides endpoints to retrieve business information by phone number ID and WABA ID.
+ */
+
 @UseGuards(ApiAuthGuard)
 @Controller('api/businesses')
 export class BusinessesApiController {

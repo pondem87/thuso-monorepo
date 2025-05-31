@@ -5,6 +5,9 @@ import { InjectRepository } from "@nestjs/typeorm"
 import { Logger } from "winston"
 import { Repository } from "typeorm"
 
+/*
+ * Service methods for inter-service functionality related to WhatsApp Business accounts.
+*/
 @Injectable()
 export class BusinessesApiService {
     private logger: Logger

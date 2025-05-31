@@ -11,6 +11,12 @@ import { UpdateBusinessProfileDto } from '../dto/update-business-profile.dto';
 import { BusinessesService } from '../services/businesses.service';
 import { User } from '../../accounts/entities/user.entity';
 
+
+/*
+ * BusinessesController handles all the business-related operations for the frontend
+ * such as creating, updating, deleting, and retrieving WhatsApp businesses
+ * and their profiles.
+ */
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller("management/:account/businesses")
 export class BusinessesController {

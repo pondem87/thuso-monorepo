@@ -18,6 +18,11 @@ import { GetMediaIdDto } from "../dto/get-media-id.dto";
 import { GetMediaHandleDto } from "../dto/get-media-handle.dto";
 import axios from "axios";
 
+/*
+ * Implements the WhatsApp Template Service for managing WhatsApp templates.
+ * Provides methods for creating, retrieving, updating, and deleting templates,
+ * Assists the templates controllers i.e REST API and RabbitMQ handlers.
+*/
 @Injectable()
 export class WhatsAppTemplateService {
     private logger: Logger
@@ -339,6 +344,12 @@ export class WhatsAppTemplateService {
         }
     }
 
+    /**
+     * Generates a whatsapp media ID for the given media file stored in S3 for attaching media to whatsapp messages.
+     * @param accountId - The account ID of the user.
+     * @param dto - The DTO containing WABA ID, S3 key, media type, and phone number ID.
+     * @returns A promise that resolves to the media ID.
+     */
     async getMediaId(accountId: string, { wabaId, mediaS3key, mediatype, phoneNumberId }: GetMediaIdDto) {
         try {
             const business = await this.whatsappBusinessRepo.findOneByOrFail({ accountId, wabaId })
@@ -358,6 +369,13 @@ export class WhatsAppTemplateService {
         }
     }
 
+    /**
+     * Generates a media handle using resumable upload api for the given media file stored in S3.
+     * This is used to attach media to whatsapp templates
+     * @param accountId - The account ID of the user.
+     * @param dto - The DTO containing WABA ID, S3 key, file size, and MIME type.
+     * @returns A promise that resolves to the media handle.
+     */
     async getMetaMediaHandle(accountId: string, { s3key, fileSize, wabaId, mimetype }: GetMediaHandleDto): Promise<string> {
         try {
             const waba = await this.whatsappBusinessRepo.findOneBy({ accountId, wabaId })
@@ -385,6 +403,9 @@ export class WhatsAppTemplateService {
                 })
             );
 
+            /*
+             * Posting a stream with axios requires the content length so we get that and them open the readstream
+            */
             const contentLength = head.ContentLength;
 
             const s3resp = await this.s3Client.send(
@@ -394,6 +415,11 @@ export class WhatsAppTemplateService {
                 })
             )
 
+
+            /*
+             * Directly pass in the readstream as the data to axios post
+             * Here we upload a media file to the resumable upload api
+            */
             const uploadResult = await axios.post(
                 `${this.configService.get<string>("FACEBOOK_GRAPH_API")}/${sessionId}`,
                 s3resp.Body,

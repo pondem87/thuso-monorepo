@@ -52,6 +52,9 @@ export const LlmRmqClient = 'llm_rmq_client'
 export const MgntRmqClient = 'mgnt_rmq_client'
 export const SubscriptionRmqClient = 'subs_rmq_client'
 
+/*
+ * mimetypes for use with whatsapp
+*/
 export const WHATSAPP_DOCS_MIMETYPES = [
     "text/plain",
     "application/pdf",
