@@ -1,5 +1,5 @@
 import { Gender } from "../../../apps/management/src/crm/types";
-import { Contact, MessageBody, Messages, Metadata, TemplateQualityUpdate, TemplateStatusUpdate } from "./whatsapp-api-types";
+import { Contact, MessageBody, Messages, Metadata, Statuses, TemplateQualityUpdate, TemplateStatusUpdate } from "./whatsapp-api-types";
 
 export type MessageProcessorRMQMessage = {
     wabaId: string
@@ -12,9 +12,10 @@ export type MessengerRMQMessage = {
     wabaId: string
     metadata: Metadata
     contact: Contact
-    type: "text",
+    type: "text"
     text: string
     conversationType: "marketing" | "utility" | "authentication" | "service"
+    campaignId?: string
 } | {
     wabaId: string
     metadata: Metadata
@@ -24,6 +25,7 @@ export type MessengerRMQMessage = {
     mimetype: string
     caption: string
     conversationType: "marketing" | "utility" | "authentication" | "service"
+    campaignId?: string
 } | {
     wabaId: string
     metadata: Metadata
@@ -34,6 +36,7 @@ export type MessengerRMQMessage = {
     caption: string
     filename: string
     conversationType: "marketing" | "utility" | "authentication" | "service"
+    campaignId?: string
 } | {
     wabaId: string
     metadata: Metadata
@@ -41,6 +44,7 @@ export type MessengerRMQMessage = {
     type: "message-body"
     messageBody: MessageBody
     conversationType: "marketing" | "utility" | "authentication" | "service"
+    campaignId?: string
 } | {
     wabaId: string
     metadata: Metadata
@@ -48,6 +52,7 @@ export type MessengerRMQMessage = {
     type: "menu"
     menuId: string
     conversationType: "marketing" | "utility" | "authentication" | "service"
+    campaignId?: string
 }
 
 export type LLMQueueMessage = {
@@ -184,14 +189,6 @@ export type CustomerRegistrationChatAgentEventPayload = {
     phone_number_id?: string[]
 }
 
-export type NewCustomerBusinessEventPayload = {
-    crmId: string
-    fullname: string
-    whatsAppNumber: string
-    accountId: string
-    initiator: "AI" | "USER"
-}
-
 export type TemplateUpdateEventPayload = {
     wabaId: string
     update: TemplateStatusUpdate
@@ -205,4 +202,44 @@ export type TemplateQualityEventPayload = {
 export type NewTopicLLMEventPayload = {
     crmId: string
     topicLabel: string
+}
+
+// ***********************************************
+// Campaign messages
+// ***********************************************
+export type CampaignMessageStatusUpdatePayload = {
+    campaignId: string
+    messageId: string | null
+    status: "sent" | "delivered" | "read" | "failed"
+}
+
+export type CampaignLaunchEventPayload = {
+    campaignId: string
+}
+
+export type StopPromotionsEventPayload = {
+    whatsAppNumber: string
+    accountId: string
+    wabaId: string
+}
+
+export type ResumeWhatsAppPromoEventPayload = {
+    whatsAppNumber: string
+    accountId: string
+    wabaId: string
+}
+
+export type ResumeWhatsAppUpdatesEventPayload = {
+    whatsAppNumber: string
+    accountId: string
+    wabaId: string
+}
+
+// ***********************************************
+// WhatsApp MessageStatus messages
+// ***********************************************
+export type WhatsAppMessageStatusUpdatePayload = {
+    wabaId: string
+    metadata: Metadata
+    status: Statuses
 }

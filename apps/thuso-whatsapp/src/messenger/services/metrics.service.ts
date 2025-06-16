@@ -116,13 +116,15 @@ export class MetricsService {
         }
     }
 
-    async createSentMessage(wamid: string, messageBody: MessageBody, conversation: Conversation): Promise<void> {
+    async createSentMessage(wamid: string, messageBody: MessageBody, conversation: Conversation, campaignId: string|null): Promise<void> {
         try {
             await this.sentMessageRepo.save(
                 this.sentMessageRepo.create({
                     wamid,
                     messageBody,
-                    conversation
+                    conversation,
+                    status: "sent", // Initial status is set to 'sent'
+                    campaignId
                 })
             )
         } catch (error) {

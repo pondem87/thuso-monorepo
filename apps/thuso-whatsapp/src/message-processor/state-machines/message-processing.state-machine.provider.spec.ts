@@ -10,6 +10,7 @@ import { Contact, GraphAPIService, Messages, Metadata, WhatsappRmqClient } from 
 import { ConfigService } from "@nestjs/config";
 import { AnyActorRef, waitFor } from "xstate";
 import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
+import { PreferencesStateService } from "../machine-states/preferences-state.service";
 
 
 describe('MessageProcessorService', () => {
@@ -36,6 +37,7 @@ describe('MessageProcessorService', () => {
                 },
                 HomeStateService,
                 ProductsStateService,
+                PreferencesStateService,
                 {
                     provide: LLMQueueService,
                     useValue: llmQueueService
@@ -62,6 +64,7 @@ describe('MessageProcessorService', () => {
     });
 
     it('should start machine', async () => {
+        const accountId = "account_550983"
         const wabaId = "waba_54321"
 
         const metadata: Metadata = {
@@ -87,6 +90,7 @@ describe('MessageProcessorService', () => {
         }
 
         const businessInfo: BusinessInfo = {
+            accountId,
             name: "business_name",
             tagline: "thunderbolt kick",
             wabaToken: "some-business-token"

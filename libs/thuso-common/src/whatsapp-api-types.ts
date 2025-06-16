@@ -180,30 +180,33 @@ export type Contact = z.infer<typeof Contact>
 
 const Origin = z.object({
     type: z.enum(["authentication", "marketing", "utility", "service", "referral_conversion"]),
-    expiration_timestamp: z.string().optional(),
 });
 
 const Conversation = z.object({
     id: z.string(),
+    expiration_timestamp: z.string().optional(),
     origin: Origin,
 });
 
 const Pricing = z.object({
     billable: z.boolean(),
     category: z.enum(["authentication", "marketing", "utility", "service", "referral_conversion"]),
-    pricing_model: z.enum(["CBP"]),
+    pricing_model: z.enum(["CBP", "PMP"]),
+    type: z.enum(["regular", "free_customer_service", "free_entry_point"]).optional()
 });
 
 const Statuses = z.object({
     biz_opaque_callback_data: z.string().optional(),
-    conversation: Conversation,
+    conversation: Conversation.optional(),
     errors: z.array(Error).optional(),
     id: z.string(),
     pricing: Pricing.optional(),
     recipient_id: z.string(),
-    status: z.enum(["delivered", "read", "sent"]),
+    status: z.enum(["delivered", "read", "sent", "failed"]),
     timestamp: z.string(),
 });
+
+export type Statuses = z.infer<typeof Statuses>
 
 const Metadata = z.object({
     display_phone_number: z.string(),
@@ -396,12 +399,6 @@ type TextParameter = {
     text: string
 }
 
-type NamedTextParameter = {
-    type: "text",
-    parameter_name: string,
-    text: string
-}
-
 type HeaderParameter = {
     type: "image",
     image: {
@@ -417,14 +414,14 @@ type HeaderParameter = {
     video: {
         id: string
     }
-} | NamedTextParameter | TextParameter
+} | TextParameter
 
 export type Component = {
     type: "header",
     parameters?: HeaderParameter[]
 } | {
     type: "body",
-    parameters?: TextParameter[] | NamedTextParameter[]
+    parameters?: TextParameter[]
 } | {
     type: "button",
     sub_type: "url" | "quick_reply" | "phone_number",

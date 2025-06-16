@@ -16,6 +16,7 @@ import { BusinessesRmqService } from './services/businesses.rmq.service';
 import { BusinessesRmqController } from './controllers/businesses.rmq.controller';
 import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { GraphAPIService, ThusoCommonModule } from '@lib/thuso-common';
+import { ExternBusinessService } from './services/externbusiness.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([WhatsAppBusiness, BusinessProfile, WhatsAppNumber, WhatsAppTemplate]), LoggingModule, ThusoCommonModule, ThusoClientProxiesModule],
@@ -25,7 +26,12 @@ import { GraphAPIService, ThusoCommonModule } from '@lib/thuso-common';
     BusinessesRmqService,
     WhatsAppTemplateService,
     ThusoClientProxiesService,
-    GraphAPIService
+    GraphAPIService,
+    ExternBusinessService,
+    {
+      provide: "IExternBusinessService",
+      useClass: ExternBusinessService
+    }
   ],
   controllers: [
     BusinessesController,
@@ -34,6 +40,6 @@ import { GraphAPIService, ThusoCommonModule } from '@lib/thuso-common';
     WhatsAppTemplateRmqController,
     BusinessesRmqController
   ],
-  exports: [TypeOrmModule]
+  exports: [TypeOrmModule, "IExternBusinessService"]
 })
 export class BusinessesModule { }

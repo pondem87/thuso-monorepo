@@ -2,12 +2,13 @@ import { LoggingService } from "@lib/logging";
 import { Injectable } from "@nestjs/common";
 import { Logger } from "winston";
 import { assign, createActor, fromPromise, setup } from "xstate";
-import { DocumentMessageBody, GraphAPIService, ImageMessageBody, InteractiveListMessageBody, MainMenuItems, MessageBody, MessengerRMQMessage, StateMachineActor, TextMessageBody } from "@lib/thuso-common";
+import { CampaignMessageStatusUpdateEventPattern, CampaignMessageStatusUpdatePayload, DocumentMessageBody, GraphAPIService, ImageMessageBody, InteractiveListMessageBody, MainMenuItems, MessageBody, MessengerRMQMessage, StateMachineActor, TextMessageBody } from "@lib/thuso-common";
 import { Conversation } from "../entities/conversation.entity";
 import { MessengerWhatsAppBusiness } from "../entities/whatsapp-business.entity";
 import { MetricsService } from "../services/metrics.service";
 import { WhatsAppBusinessService } from "../services/whatsapp-business.service";
 import { compileMenu } from "./functions";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 @Injectable()
 export class MessengerProcessStateMachineProvider {
@@ -132,7 +133,8 @@ export class MessengerProcessStateMachineProvider {
         private readonly loggingService: LoggingService,
         private readonly metricsService: MetricsService,
         private readonly whatsAppBusinessService: WhatsAppBusinessService,
-        private readonly graphApiService: GraphAPIService
+        private readonly graphApiService: GraphAPIService,
+        private readonly clientService: ThusoClientProxiesService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "whatsapp-messenger",
@@ -314,9 +316,27 @@ export class MessengerProcessStateMachineProvider {
                 await this.metricsService.createSentMessage(
                     response.messages[0].id,
                     body,
-                    input.context.conversation
+                    input.context.conversation,
+                    context.payload.campaignId ? context.payload.campaignId : null
+                )
+
+                this.clientService.emitMgntQueue(
+                    CampaignMessageStatusUpdateEventPattern,
+                    {
+                        campaignId: context.payload.campaignId,
+                        messageId: response.messages[0].id,
+                        status: "sent"
+                    } as CampaignMessageStatusUpdatePayload
                 )
             } else {
+                this.clientService.emitMgntQueue(
+                    CampaignMessageStatusUpdateEventPattern,
+                    {
+                        campaignId: context.payload.campaignId,
+                        messageId: null,
+                        status: "failed"
+                    } as CampaignMessageStatusUpdatePayload
+                )
                 return false
             }
         }

@@ -2,9 +2,10 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { MessengerProcessStateMachineProvider } from "./messenger-process.state-machine.provider";
 import { LoggingService, mockedLoggingService } from "@lib/logging";
 import { MetricsService } from "../services/metrics.service";
-import { GraphAPIService, MessengerRMQMessage, TextMessageBody } from "@lib/thuso-common";
+import { CampaignMessageStatusUpdateEventPattern, GraphAPIService, MessengerRMQMessage, TextMessageBody } from "@lib/thuso-common";
 import { WhatsAppBusinessService } from "../services/whatsapp-business.service";
 import { AnyActorRef, waitFor } from "xstate";
+import { ThusoClientProxiesService } from "@lib/thuso-client-proxies";
 
 describe('MessengerProcessStateMachineProvider', () => {
     let mpsmProvider: MessengerProcessStateMachineProvider;
@@ -21,6 +22,10 @@ describe('MessengerProcessStateMachineProvider', () => {
 
     const mockWhatsAppBusinessService = {
         getBusinessInfo: null
+    }
+
+    const clientProxy = {
+        emitMgntQueue: jest.fn()
     }
 
     beforeEach(async () => {
@@ -42,6 +47,10 @@ describe('MessengerProcessStateMachineProvider', () => {
                 {
                     provide: WhatsAppBusinessService,
                     useValue: mockWhatsAppBusinessService
+                },
+                {
+                    provide: ThusoClientProxiesService,
+                    useValue: clientProxy
                 }
             ],
         }).compile();
@@ -50,6 +59,7 @@ describe('MessengerProcessStateMachineProvider', () => {
     });
 
     afterEach(() => {
+        clientProxy.emitMgntQueue.mockClear()
     })
 
     it('should be defined', () => {
@@ -272,5 +282,13 @@ describe('MessengerProcessStateMachineProvider', () => {
             payload.messageBody
         )
 
+        expect(clientProxy.emitMgntQueue).toHaveBeenCalledWith(
+            CampaignMessageStatusUpdateEventPattern,
+            {
+                campaignId: undefined,
+                messageId: "<WHATSAPP_MESSAGE_ID>",
+                status: "sent"
+            }
+        )
     })
 })

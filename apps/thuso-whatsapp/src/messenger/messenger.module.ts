@@ -14,15 +14,17 @@ import { MetricsService } from './services/metrics.service';
 import { WhatsAppBusinessService } from './services/whatsapp-business.service';
 import { MessengerProcessStateMachineProvider } from './state-machines/messenger-process.state-machine.provider';
 import { ThusoCommonModule } from '@lib/thuso-common';
+import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([MessengerAccount, Conversation, DailyMetrics, RunningMetrics, SentMessage, MessengerWhatsAppBusiness]),
     ConfigModule,
     LoggingModule,
-    ThusoCommonModule
+    ThusoCommonModule,
+    ThusoClientProxiesModule
   ],
   controllers: [MessengerController],
-  providers: [MessengerService, MetricsService, WhatsAppBusinessService, MessengerProcessStateMachineProvider]
+  providers: [MessengerService, MetricsService, WhatsAppBusinessService, MessengerProcessStateMachineProvider, ThusoClientProxiesService]
 })
 export class MessengerModule {}

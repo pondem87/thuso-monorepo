@@ -1,4 +1,4 @@
-import { AccountDataUpdatePayload, AccountUpdateMessengerPattern, BusinessProfileUpdateMessengerPattern, BusinessProfileUpdatePayload, BusinessUpdateMessengerPattern, MessengerEventPattern, MessengerRMQMessage, WhatsAppBusinessUpdatePayload } from '@lib/thuso-common';
+import { AccountDataUpdatePayload, AccountUpdateMessengerPattern, BusinessProfileUpdateMessengerPattern, BusinessProfileUpdatePayload, BusinessUpdateMessengerPattern, MessengerEventPattern, MessengerRMQMessage, WhatsAppBusinessUpdatePayload, WhatsappMessageStatusUpdateEventPattern, WhatsAppMessageStatusUpdatePayload } from '@lib/thuso-common';
 import { Controller } from '@nestjs/common';
 import { Logger } from 'winston';
 import { MessengerService } from '../services/messenger.service';
@@ -51,5 +51,13 @@ export class MessengerController {
     ) {
         this.logger.debug("Received MessengerEventPattern:", {data})
         return this.whatsAppBusinessService.processProfileUpdate(data)
+    }
+
+    @EventPattern(WhatsappMessageStatusUpdateEventPattern)
+    processWhatsappMessageStatusUpdate(
+        @Payload() data: WhatsAppMessageStatusUpdatePayload
+    ) {
+        this.logger.debug("Received WhatsappMessageStatusUpdateEventPattern:", {data})
+        return this.messengerService.processWhatsappMessageStatusUpdate(data)
     }
 }

@@ -1,5 +1,6 @@
-import { Biller, TemplateComponent } from "@lib/thuso-common";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Biller, Component } from "@lib/thuso-common";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { CampaignMessage } from "./campaign-message.entity";
 
 @Entity()
 export class Campaign {
@@ -7,13 +8,25 @@ export class Campaign {
     id: string
 
     @Column("uuid")
+    accountId: string
+
+    @Column("varchar")
+    name: string
+
+    @Column("varchar")
+    templateName: string
+
+    @Column("uuid")
     templateId: string
+
+    @Column("varchar")
+    wabaId: string
 
     @Column("varchar")
     phoneNumberId: string
 
     @Column("simple-json")
-    components: TemplateComponent[]
+    components: Component[]
 
     @Column("int")
     dailyMessageLimit: number
@@ -50,6 +63,9 @@ export class Campaign {
 
     @Column("boolean", { default: false })
     completedClientFiltering: boolean
+
+    @OneToMany(() => CampaignMessage, (campaignMessage) => campaignMessage.campaign)
+    campaignMessages: CampaignMessage[]
 
     @Column({ enum: Biller })
     biller: Biller

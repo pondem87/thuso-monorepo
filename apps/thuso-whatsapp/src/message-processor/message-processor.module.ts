@@ -16,6 +16,7 @@ import { ProductsStateService } from './machine-states/products-state.service';
 import { MessageProcessingStateMachineProvider } from './state-machines/message-processing.state-machine.provider';
 import { MessageProcessorAccountData } from './entities/account-data.entity';
 import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { PreferencesStateService } from './machine-states/preferences-state.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([MessageProcessorAccountData, PersistedInteractiveState]), ConfigModule, LoggingModule, ThusoCommonModule, ThusoClientProxiesModule],
@@ -30,6 +31,7 @@ import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-
     LLMQueueService,
     HomeStateService,
     ProductsStateService,
+    PreferencesStateService,
     MessageProcessingStateMachineProvider,
     ThusoClientProxiesService
   ]

@@ -6,6 +6,7 @@ import { LoggingService } from "@lib/logging";
 import { HomeStateService } from "../machine-states/home-state.service";
 import { Contact, Messages, Metadata } from "@lib/thuso-common";
 import { ProductsStateService } from "../machine-states/products-state.service";
+import { PreferencesStateService } from "../machine-states/preferences-state.service";
 
 @Injectable()
 export class InteractiveStateMachineProvider {
@@ -16,7 +17,8 @@ export class InteractiveStateMachineProvider {
 	constructor(
 		private readonly loggingService: LoggingService,
 		private readonly homeStateService: HomeStateService,
-		private readonly productsStateService: ProductsStateService
+		private readonly productsStateService: ProductsStateService,
+		private readonly preferencesStateService: PreferencesStateService
 	) {
 		this.logger = this.loggingService.getLogger({
 			module: "message-processor",
@@ -170,6 +172,9 @@ export class InteractiveStateMachineProvider {
 									productsNav: { skip: 0, take: defaultTake, current: 0, pages: 0 }
 								})
 							},
+							preferences: {
+								target: "preferences"
+							},
 							nochange: {
 								target: "home",
 								reenter: true
@@ -313,6 +318,96 @@ export class InteractiveStateMachineProvider {
 								reenter: true
 							}
 						}
+					},
+					// preferences state
+					preferences: {
+						states: {
+							preferencesMenu: {
+								entry: [
+									({ context }) => this.preferencesStateService.promptPreferencesMenuState({ context })
+								],
+								states: {
+									ready: {
+										tags: ["ready"],
+										on: {
+											execute: {
+												target: "executing",
+												actions: assign(({ event }) => ({ ...event.payload }))
+											}
+										},
+									},
+									executing: {
+										invoke: {
+											id: randomUUID(),
+											src: this.executorStateMachine,
+											input: ({ context }) => ({
+												parentContext: context,
+												executorSrc: this.productsStateService.executeProductsMenuItem
+											}),
+											onDone: {
+												actions: [
+													assign({
+														message: undefined,
+														nextEvent: ({ event }) => event.output
+													})
+												],
+												target: "executed"
+											},
+											onError: {
+												target: "ready",
+												actions: [
+													({ event }) => this.logger.error(
+														"ProductsMenu State executor failed",
+														{ error: event.error }
+													),
+													assign({
+														message: undefined
+													})
+												]
+											}
+										}
+									},
+									executed: {
+										tags: ["executed"]
+									}
+								},
+								initial: "ready",
+								on: {
+									receivePromoMessages: {
+										target: "promoMessages"
+									},
+									receiveUpdateMessages: {
+										target: "updateMessages"
+									},
+									nochange: {
+										target: "preferencesMenu",
+										reenter: true
+									}
+								}
+							},
+							promoMessages: {
+								entry: [
+									({ context }) => this.preferencesStateService.executeResumePromoMessages({ context })
+								],
+								always: "preferencesMenu"
+							},
+							updateMessages: {
+								entry: [
+									({ context }) => this.preferencesStateService.executeResumeUpdateMessages({ context })
+								],
+								always: "preferencesMenu"
+							}
+						},
+						initial: "preferencesMenu",
+						on: {
+							exitPreferences: {
+								target: "home"
+							},
+							nochange: {
+								target: "preferences",
+								reenter: true
+							}
+						}
 					}
 				},
 				initial: "home"
@@ -333,11 +428,11 @@ export type ISMEventType =
 	{ type: "viewProduct"; productId: string } |
 	{ type: "productsBackToMenu" } |
 	{ type: "exitProducts" } |
-	{ type: "promotions" } |
-	{ type: "navigatePromotions"; nav: { skip: number; take: number; current: number; pages: number } } |
-	{ type: "viewPromotion"; productId: string } |
-	{ type: "promotionsBackToMenu" } |
-	{ type: "exitPromotions" } |
+	{ type: "preferences" } |
+	{ type: "receivePromoMessages" } |
+	{ type: "receiveUpdateMessages" } |
+	{ type: "preferencesBackToMenu" } |
+	{ type: "exitPreferences" } |
 	{ type: "execute", payload: { contact: Contact, message: Messages, businessInfo: BusinessInfo } } |
 	{ type: "nochange" }
 
@@ -357,6 +452,7 @@ export type ISMContext = {
 }
 
 export type BusinessInfo = {
+	accountId: string
 	name: string,
 	tagline: string,
 	wabaToken: string

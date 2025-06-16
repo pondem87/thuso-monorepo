@@ -1,6 +1,6 @@
 import { LoggingService } from '@lib/logging';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
-import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, TemplateQualityEventPattern, TemplateQualityEventPayload, TemplateStatusUpdate, TemplateUpdateEventPattern, TemplateUpdateEventPayload, WhatsAppWebhookPayload } from '@lib/thuso-common';
+import { ContactlessMessageProcessorEventPattern, MessageProcessorEventPattern, TemplateQualityEventPattern, TemplateQualityEventPayload, TemplateStatusUpdate, TemplateUpdateEventPattern, TemplateUpdateEventPayload, WhatsappMessageStatusUpdateEventPattern, WhatsAppMessageStatusUpdatePayload, WhatsAppWebhookPayload } from '@lib/thuso-common';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'winston';
@@ -64,7 +64,14 @@ export class WhatsappService {
 
                         if (change.value.statuses) {
                             change.value.statuses.forEach(status => {
-                                this.logger.debug("Unhandled webhook status notification", { data: status })
+                                this.clientService.emitWhatsappQueue(
+                                    WhatsappMessageStatusUpdateEventPattern,
+                                    {
+                                        wabaId,
+                                        status,
+                                        metadata: change.value.metadata
+                                    } as WhatsAppMessageStatusUpdatePayload
+                                )
                             })
                         }
 

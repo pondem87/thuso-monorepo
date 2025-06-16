@@ -15,4 +15,10 @@ export class SentMessage {
 
     @ManyToOne(() => Conversation, (conversation) => conversation.sentMessages)
     conversation: Conversation
+
+    @Column("varchar", { nullable: true })
+    status: "sent" | "delivered" | "read" | "failed"
+
+    @Column("uuid", { nullable: true })
+    campaignId: string | null
 }

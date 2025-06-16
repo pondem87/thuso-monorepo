@@ -299,9 +299,9 @@ export class AccountsService {
             )
 
             // check if user already exists
-            const user = await this.userRepository.findOneBy({ email })
+            const oldUser = await this.userRepository.findOneBy({ email })
 
-            const inviteLink = user ? `https://manage.thuso.pfitz.co.zw/accept/${invite.id}` : `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
+            const inviteLink = oldUser ? `https://manage.thuso.pfitz.co.zw/accept/${invite.id}` : `https://manage.thuso.pfitz.co.zw/create/${invite.id}`
 
             // send to email
             const emailHtml = emailHtmlTemplate(
@@ -329,7 +329,7 @@ export class AccountsService {
 
             return { message: "Invitation sent" }
         } catch (error) {
-            this.logger.error("Failed to send invitation", { email: user.email, accountId, error: JSON.stringify(error) })
+            this.logger.error("Failed to send invitation", { email: user.email, accountId, error })
             throw new HttpException("Server Failure", HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }

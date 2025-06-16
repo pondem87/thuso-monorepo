@@ -1,5 +1,5 @@
 import { LoggingService } from '@lib/logging';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { DeleteResult, EntityNotFoundError, Repository } from 'typeorm';
 import { Logger } from 'winston';
 import { Customer } from '../entities/customer.entity';
@@ -8,12 +8,13 @@ import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { EditCustomerDto } from '../dto/edit-customer.dto';
 import { Preferences } from '../entities/prefs.entity';
 import { CustomerQueryDto } from '../dto/customer-query.dtp';
-import { getDateOnly, NewCustomerBusinessEventPattern, NewCustomerBusinessEventPayload, NewTopicLLMEventPayload, RegisterCustomerEventPayload } from '@lib/thuso-common';
+import { CustomerRegistrationChatAgentEventPattern, CustomerRegistrationChatAgentEventPayload, getDateOnly, NewTopicLLMEventPayload, RegisterCustomerEventPayload, ResumeWhatsAppPromoEventPayload, ResumeWhatsAppUpdatesEventPayload, StopPromotionsEventPayload } from '@lib/thuso-common';
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 import { CustomerAction } from '../entities/action.entity';
 import { CreateActionDto } from '../dto/create-action.dto';
 import { CustomerActionType } from '../types';
 import { EditActionDto } from '../dto/edit-action.dto';
+import { IExternBusinessService } from '../../businesses/interfaces/iexternbusiness.service';
 
 @Injectable()
 export class CrmService {
@@ -27,7 +28,9 @@ export class CrmService {
         private readonly prefsRepo: Repository<Preferences>,
         @InjectRepository(CustomerAction)
         private readonly actionsRepo: Repository<CustomerAction>,
-        private readonly clientsService: ThusoClientProxiesService
+        private readonly clientsService: ThusoClientProxiesService,
+        @Inject("IExternBusinessService")
+        private readonly businessService: IExternBusinessService
     ) {
         this.logger = this.loggingService.getLogger({
             module: "crm",
@@ -57,16 +60,20 @@ export class CrmService {
                 })
             )
 
-            this.clientsService.emitMgntQueue(
-                NewCustomerBusinessEventPattern,
-                {
-                    crmId: customer.id,
-                    accountId: customer.accountId,
-                    fullname: `${customer.forenames} ${customer.surname}`,
-                    whatsAppNumber: customer.whatsAppNumber,
-                    initiator: "USER"
-                } as NewCustomerBusinessEventPayload
-            )
+            const businesses = await this.businessService.getAccountBusinesses(accountId)
+
+            for (const business of businesses) {
+                this.clientsService.emitLlmQueue(
+                    CustomerRegistrationChatAgentEventPattern,
+                    {
+                        crmId: customer.id,
+                        fullname: `${customer.forenames} ${customer.surname}`,
+                        whatsAppNumber: customer.whatsAppNumber,
+                        wabaId: business.wabaId,
+                        phone_number_id: business.appNumbers.map(num => num.appNumberId)
+                    } as CustomerRegistrationChatAgentEventPayload
+                )
+            }
 
             return customer
         } catch (error) {
@@ -79,32 +86,40 @@ export class CrmService {
         try {
             this.logger.info("Registering ", { data })
 
-            const prefs = await this.prefsRepo.save(
-                this.prefsRepo.create({
-                    whatsAppPromo: true,
-                    whatsAppUpdates: true,
-                    emailPromo: true,
-                    emailUpdates: true
-                })
-            )
+            // check if number not already associated with our customer
+            let customer = await this.customerRepo.findOneBy({ accountId: data.accountId, whatsAppNumber: data.whatsAppNumber })
 
-            const customer = await this.customerRepo.save(
-                this.customerRepo.create({
-                    ...data,
-                    prefs
-                })
-            )
+            if (!customer) {
+                const prefs = await this.prefsRepo.save(
+                    this.prefsRepo.create({
+                        whatsAppPromo: true,
+                        whatsAppUpdates: true,
+                        emailPromo: true,
+                        emailUpdates: true
+                    })
+                )
 
-            this.clientsService.emitMgntQueue(
-                NewCustomerBusinessEventPattern,
-                {
-                    crmId: customer.id,
-                    accountId: customer.accountId,
-                    fullname: `${customer.forenames} ${customer.surname}`,
-                    whatsAppNumber: customer.whatsAppNumber,
-                    initiator: "AI"
-                } as NewCustomerBusinessEventPayload
-            )
+                customer = await this.customerRepo.save(
+                    this.customerRepo.create({
+                        ...data,
+                        prefs
+                    })
+                )
+            }
+
+            const businesses = await this.businessService.getAccountBusinesses(data.accountId)
+
+            for (const business of businesses) {
+                this.clientsService.emitLlmQueue(
+                    CustomerRegistrationChatAgentEventPattern,
+                    {
+                        crmId: customer.id,
+                        fullname: `${customer.forenames} ${customer.surname}`,
+                        whatsAppNumber: customer.whatsAppNumber,
+                        wabaId: business.wabaId
+                    } as CustomerRegistrationChatAgentEventPayload
+                )
+            }
 
         } catch (error) {
             this.logger.error("Error while creating customer from rmq message", { error, data })
@@ -176,6 +191,29 @@ export class CrmService {
         }
     }
 
+    async stopPromotionsRequest(data: StopPromotionsEventPayload): Promise<void> {
+        try {
+            await this.customerRepo.update({ accountId: data.accountId, whatsAppNumber: data.whatsAppNumber }, { prefs: { whatsAppPromo: false }})
+        } catch (error) {
+            this.logger.error("Error while processing request to stop promotions")
+        }
+    }
+
+    async resumeWhatsAppUpdates(data: ResumeWhatsAppUpdatesEventPayload) {
+        try {
+            await this.customerRepo.update({ accountId: data.accountId, whatsAppNumber: data.whatsAppNumber }, { prefs: { whatsAppUpdates: true }})
+        } catch (error) {
+            this.logger.error("Error while processing request to resume whatsapp updates")
+        }
+    }
+    async resumeWhatsAppPromotions(data: ResumeWhatsAppPromoEventPayload) {
+        try {
+            await this.customerRepo.update({ accountId: data.accountId, whatsAppNumber: data.whatsAppNumber }, { prefs: { whatsAppPromo: true }})
+        } catch (error) {
+            this.logger.error("Error while processing request to resume whatsapp promotions")
+        }
+    }
+
     async createAction(accountId: string, customerId: string, dto: CreateActionDto): Promise<CustomerAction> {
         try {
             const customer = await this.customerRepo.findOneByOrFail({ accountId, id: customerId })
@@ -211,7 +249,7 @@ export class CrmService {
 
     async editAction(accountId: string, customerId: string, actionId: string, dto: EditActionDto): Promise<CustomerAction> {
         try {
-            const activity = await this.actionsRepo.findOneByOrFail({ customer: { accountId, id: customerId}, id: actionId })
+            const activity = await this.actionsRepo.findOneByOrFail({ customer: { accountId, id: customerId }, id: actionId })
             for (const key of Object.keys(dto)) {
                 activity[key] = dto[key]
             }
@@ -224,7 +262,7 @@ export class CrmService {
 
     async listActions(accountId: string, customerId: string, skip?: number, take?: number): Promise<[CustomerAction[], number]> {
         try {
-            return await this.actionsRepo.findAndCount({ where: { customer: { accountId, id: customerId }}, skip, take, order: { createdAt: "DESC" }})
+            return await this.actionsRepo.findAndCount({ where: { customer: { accountId, id: customerId } }, skip, take, order: { createdAt: "DESC" } })
         } catch (error) {
             this.logger.error("Error while getting customer activity", { accountId, error })
             throw new HttpException("Error while deleting customer", HttpStatus.INTERNAL_SERVER_ERROR)

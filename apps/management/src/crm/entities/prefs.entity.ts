@@ -18,7 +18,7 @@ export class Preferences {
     @Column("boolean", { default: true })
     whatsAppUpdates: boolean
 
-    @OneToOne(() => Customer, (customer) => customer.prefs)
+    @OneToOne(() => Customer, (customer) => customer.prefs, { onDelete: "CASCADE" })
     @JoinColumn()
     customer: Customer
 }

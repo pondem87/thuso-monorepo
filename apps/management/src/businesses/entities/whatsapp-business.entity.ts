@@ -22,6 +22,9 @@ export class WhatsAppBusiness {
     @Column("boolean", { default: false })
     subscribed: boolean
 
+    @Column("int", { default: 250 })
+    businessInitiaitedMessageLimit: number
+
     @Column("boolean", { default: false })
     disabled: boolean
 

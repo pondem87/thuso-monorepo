@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BusinessInfo, defaultTake, InteractiveStateMachineProvider, ISMContext, ISMEventType } from './interactive.state-machine.provider';
 import { InteractiveStateMachineService } from './interactive.state-machine.service';
 import { AnyActorRef, createActor, waitFor } from 'xstate';
-import { Contact, GraphAPIService, Messages, MessengerEventPattern, MessengerRMQMessage, Metadata, StateMachineActor, WhatsappRmqClient } from '@lib/thuso-common';
+import { Contact, GraphAPIService, Messages, MessengerEventPattern, MessengerRMQMessage, Metadata, ResumeWhatsAppPromoEventPattern, ResumeWhatsAppPromoEventPayload, StateMachineActor, WhatsappRmqClient } from '@lib/thuso-common';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
 import { HomeStateService } from '../machine-states/home-state.service';
 import { Product, ProductsStateService } from '../machine-states/products-state.service';
@@ -10,6 +10,7 @@ import { LLMQueueService } from '../services/llm-queue.service';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from "uuid";
 import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
+import { PreferencesStateService } from '../machine-states/preferences-state.service';
 
 describe('MessageProcessorService', () => {
     let provider: InteractiveStateMachineProvider;
@@ -19,8 +20,9 @@ describe('MessageProcessorService', () => {
         sendPlainTextToLLM: jest.fn()
     }
 
-    const whatsappRmqClient = {
-        emitWhatsappQueue: jest.fn()
+    const clientProxy = {
+        emitWhatsappQueue: jest.fn(),
+        emitMgntQueue: jest.fn()
     }
 
     const graphAPIService = {
@@ -43,6 +45,7 @@ describe('MessageProcessorService', () => {
                 },
                 HomeStateService,
                 ProductsStateService,
+                PreferencesStateService,
                 {
                     provide: LLMQueueService,
                     useValue: llmQueueService
@@ -59,7 +62,7 @@ describe('MessageProcessorService', () => {
                 },
                 {
                     provide: ThusoClientProxiesService,
-                    useValue: whatsappRmqClient
+                    useValue: clientProxy
                 }
             ],
         }).compile();
@@ -69,7 +72,7 @@ describe('MessageProcessorService', () => {
 
     afterEach(() => {
         llmQueueService.sendPlainTextToLLM.mockClear()
-        whatsappRmqClient.emitWhatsappQueue.mockClear()
+        clientProxy.emitWhatsappQueue.mockClear()
     })
 
     it('state machine should start', () => {
@@ -107,7 +110,7 @@ describe('MessageProcessorService', () => {
     });
 
     it('state machine should execute', async () => {
-
+        const accountId = "account_550983"
         const wabaId = "waba_54321"
 
         const metadata: Metadata = {
@@ -133,6 +136,7 @@ describe('MessageProcessorService', () => {
         }
 
         const businessInfo: BusinessInfo = {
+            accountId,
             name: "business_name",
             tagline: "thunderbolt kick",
             wabaToken: "some-waba-token"
@@ -174,7 +178,7 @@ describe('MessageProcessorService', () => {
     });
 
     it('state machine state should change to products', async () => {
-
+        const accountId = "account_550983"
         const wabaId = "waba_54321"
 
         const metadata: Metadata = {
@@ -200,6 +204,7 @@ describe('MessageProcessorService', () => {
         }
 
         const businessInfo: BusinessInfo = {
+            accountId,
             name: "business_name",
             tagline: "thunderbolt kick",
             wabaToken: "some-waba-token"
@@ -292,7 +297,7 @@ describe('MessageProcessorService', () => {
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 
         const messengerPayload: MessengerRMQMessage = {
             wabaId,
@@ -306,14 +311,14 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload
         )
     });
 
     it('state machine state should change to products and execute', async () => {
-
+        const accountId = "account_550983"
         const wabaId = "waba_54321"
 
         const metadata: Metadata = {
@@ -339,6 +344,7 @@ describe('MessageProcessorService', () => {
         }
 
         const businessInfo: BusinessInfo = {
+            accountId,
             name: "business_name",
             tagline: "thunderbolt kick",
             wabaToken: "some-business-token"
@@ -432,7 +438,8 @@ describe('MessageProcessorService', () => {
         expect(ismActor.getSnapshot().context).toMatchObject({
             wabaId,
             contact,
-            metadata
+            metadata,
+            businessInfo
         })
 
         ismActor.send({
@@ -443,7 +450,7 @@ describe('MessageProcessorService', () => {
 
         await new Promise((resolve) => setImmediate(resolve));
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(1)
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledTimes(1)
 
         const messengerPayload: MessengerRMQMessage = {
             wabaId,
@@ -457,7 +464,7 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload
         )
@@ -502,7 +509,7 @@ describe('MessageProcessorService', () => {
             `presigned-url`
         )
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledTimes(2)
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledTimes(2)
 
         const messengerPayload2: MessengerRMQMessage = {
             wabaId,
@@ -519,9 +526,85 @@ describe('MessageProcessorService', () => {
             conversationType: "service"
         }
 
-        expect(whatsappRmqClient.emitWhatsappQueue).toHaveBeenCalledWith(
+        expect(clientProxy.emitWhatsappQueue).toHaveBeenCalledWith(
             MessengerEventPattern,
             messengerPayload2
+        )
+    });
+
+    it('start state machine and navigate to preferences', async () => {
+        const accountId = "account_550983"
+        const wabaId = "waba_54321"
+
+        const metadata: Metadata = {
+            display_phone_number: "display_phone_number",
+            phone_number_id: "PHONE_NUMBER_ID"
+        };
+
+        const contact: Contact = {
+            "profile": {
+                "name": "NAME"
+            },
+            "wa_id": "WHATSAPP_ID"
+        }
+
+        const message: Messages = {
+            "from": "<WHATSAPP_USER_PHONE_NUMBER>",
+            "id": "<WHATSAPP_MESSAGE_ID>",
+            "timestamp": "<WEBHOOK_SENT_TIMESTAMP>",
+            "text": {
+                "body": "<MESSAGE_BODY_TEXT>"
+            },
+            "type": "text"
+        }
+
+        const businessInfo: BusinessInfo = {
+            accountId,
+            name: "business_name",
+            tagline: "thunderbolt kick",
+            wabaToken: "some-waba-token"
+        }
+
+        const ismActor: StateMachineActor<ISMEventType, ISMContext> = createActor(provider.getInteractiveStateMachine(), {
+            input: {
+                wabaId,
+                contact,
+                metadata,
+                businessInfo
+            }
+        })
+
+        ismActor.start()
+
+        expect(ismActor.getSnapshot().value).toEqual({ home: "ready" })
+        expect(ismActor.getSnapshot().context).toMatchObject({
+            wabaId,
+            contact,
+            metadata
+        })
+
+        ismActor.send({
+            type: "preferences"
+        })
+
+        expect(ismActor.getSnapshot().value).toEqual({ preferences: { preferencesMenu: "ready" }})
+
+        ismActor.send({
+            type: "receivePromoMessages"
+        })
+
+        expect(ismActor.getSnapshot().value).toEqual({ preferences: { preferencesMenu: "ready" }})
+
+        await new Promise(setImmediate)
+
+        expect(clientProxy.emitMgntQueue).toHaveBeenCalledTimes(1)
+        expect(clientProxy.emitMgntQueue).toHaveBeenCalledWith(
+            ResumeWhatsAppPromoEventPattern,
+            {
+                accountId: businessInfo.accountId,
+                wabaId: wabaId,
+                whatsAppNumber: contact.wa_id
+            } as ResumeWhatsAppPromoEventPayload
         )
     });
 });

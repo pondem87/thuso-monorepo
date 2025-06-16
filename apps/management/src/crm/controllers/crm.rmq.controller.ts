@@ -3,7 +3,7 @@ import { Controller } from "@nestjs/common"
 import { Logger } from "winston"
 import { CrmService } from "../services/crm.service"
 import { EventPattern, Payload } from "@nestjs/microservices"
-import { NewTopicLLMEventPattern, NewTopicLLMEventPayload, RegisterCustomerEventPayload, RegisterCustomerToCRMEventPattern } from "@lib/thuso-common"
+import { NewTopicLLMEventPattern, NewTopicLLMEventPayload, RegisterCustomerEventPayload, RegisterCustomerToCRMEventPattern, ResumeWhatsAppPromoEventPattern, ResumeWhatsAppPromoEventPayload, ResumeWhatsAppUpdatesEventPayload, StopPromotionsEventPattern, StopPromotionsEventPayload } from "@lib/thuso-common"
 
 @Controller()
 export class CrmRmqController {
@@ -33,5 +33,26 @@ export class CrmRmqController {
         @Payload() data: NewTopicLLMEventPayload
     ) {
         return this.crmService.processNewChatTopic(data)
+    }
+
+    @EventPattern(StopPromotionsEventPattern)
+    processStopPromotionsRequest(
+        @Payload() data: StopPromotionsEventPayload
+    ) {
+        return this.crmService.stopPromotionsRequest(data)
+    }
+
+    @EventPattern(ResumeWhatsAppPromoEventPattern)
+    processResumeWhatsAppPromo(
+        @Payload() data: ResumeWhatsAppPromoEventPayload
+    ) {
+        return this.crmService.resumeWhatsAppPromotions(data)
+    }
+
+    @EventPattern(ResumeWhatsAppPromoEventPattern)
+    processResumeWhatsAppUpdates(
+        @Payload() data: ResumeWhatsAppUpdatesEventPayload
+    ) {
+        return this.crmService.resumeWhatsAppUpdates(data)
     }
 }

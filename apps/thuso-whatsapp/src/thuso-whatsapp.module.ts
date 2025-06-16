@@ -7,12 +7,13 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import AppDataSource from './db/datasource'
+import { ThusoClientProxiesModule, ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: [".env"] }),
     TypeOrmModule.forRoot(AppDataSource.options),
-    WhatsappModule, MessageProcessorModule, MessengerModule],
+    WhatsappModule, MessageProcessorModule, MessengerModule, ThusoClientProxiesModule],
   controllers: [ThusoWhatsappController],
   providers: [ThusoWhatsappService],
 })

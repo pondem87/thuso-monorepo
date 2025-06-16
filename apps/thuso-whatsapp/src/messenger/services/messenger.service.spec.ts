@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MessengerService } from './messenger.service';
 import { MessengerProcessStateMachineProvider } from '../state-machines/messenger-process.state-machine.provider';
 import { LoggingService, mockedLoggingService } from '@lib/logging';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { SentMessage } from '../entities/sent-message.entity';
+import { ThusoClientProxiesService } from '@lib/thuso-client-proxies';
 
 describe('MessengerService', () => {
   let service: MessengerService;
@@ -17,6 +20,14 @@ describe('MessengerService', () => {
         {
           provide: LoggingService,
           useValue: mockedLoggingService
+        },
+        {
+          provide: getRepositoryToken(SentMessage),
+          useValue: {}
+        },
+        {
+          provide: ThusoClientProxiesService,
+          useValue: {}
         }
       ],
     }).compile();

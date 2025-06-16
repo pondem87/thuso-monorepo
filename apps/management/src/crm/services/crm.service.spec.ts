@@ -32,6 +32,10 @@ describe('CrmService', () => {
         {
           provide: ThusoClientProxiesService,
           useValue: {}
+        },
+        {
+          provide: "IExternBusinessService",
+          useValue: {}
         }
       ],
     }).compile();

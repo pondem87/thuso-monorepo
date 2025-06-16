@@ -21,6 +21,6 @@ export class WhatsAppNumber {
     @Column("boolean", { default: false })
     registered: boolean
 
-    @ManyToOne(() => WhatsAppBusiness, (waba) => waba.appNumbers)
+    @ManyToOne(() => WhatsAppBusiness, (waba) => waba.appNumbers, { onDelete: "CASCADE" })
     waba: WhatsAppBusiness
 }
