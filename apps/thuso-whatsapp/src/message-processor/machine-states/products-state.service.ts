@@ -388,7 +388,7 @@ export class ProductsStateService {
                 type: "reply",
                 reply: {
                     id: moreMediaId,
-                    title: "More Images and Files"
+                    title: "View Media Files"
                 }
             })
         }
