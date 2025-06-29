@@ -42,7 +42,7 @@ export class MessageProcessorService {
             return
         }
 
-        if (accountData.disabled || !accountData.subscriptionEndDate || accountData.subscriptionEndDate < new Date()) {
+        if (accountData.disabled || !accountData.subscriptionEndDate || accountData.subscriptionEndDate.getTime() < Date.now()) {
             // no active subscription
             this.logger.warn("Cannot process message. Account disabled or subscription expired", {
                 payload,
