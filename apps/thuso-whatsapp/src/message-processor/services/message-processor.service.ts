@@ -42,7 +42,7 @@ export class MessageProcessorService {
             return
         }
 
-        this.logger.info("Checking subscription status", { accountData })
+        this.logger.info("Checking subscription status", { endDate: accountData.subscriptionEndDate, isValid: accountData.subscriptionEndDate < new Date() })
 
         if (accountData.disabled || !accountData.subscriptionEndDate || accountData.subscriptionEndDate < new Date()) {
             // no active subscription
