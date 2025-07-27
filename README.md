@@ -1,5 +1,5 @@
-# Thuso - Backend
-
+# Thuso - Backend (deprecated)
+(deprecated!) Rewriting in Java with a more matured engineering process for maintainability, reliability and improved documentation
 This repository contains the NestJS microservices for Thuso services together with CICD components using Github actions and DOKS.
 
 # Services
